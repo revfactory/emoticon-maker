@@ -1,0 +1,209 @@
+<!--
+  Emoticon Maker - AI 이모티콘 생성
+  Copyright (c) 2026 Hwang Minho (revfactory@gmail.com)
+  Licensed under Apache 2.0 + Commons Clause — 상업적 판매 불가
+  See LICENSE file for details
+-->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emoticon Maker - AI 이모티콘 생성 | 사진으로 이모티콘 24종 만들기</title>
+<meta name="description" content="사진 한 장으로 이모티콘 24종 세트를 자동 생성하세요. Gemini AI가 지브리풍, 병맛 스케치, 미니멀 등 다양한 스타일로 나만의 이모티콘을 만들어드립니다.">
+<meta name="keywords" content="이모티콘 만들기, AI 이모티콘 생성, 이모티콘 메이커, 캐릭터 생성, Gemini AI, 무료 이모티콘">
+<meta name="author" content="Hwang Minho">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#111111">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Emoticon Maker - AI 이모티콘 생성">
+<meta property="og:description" content="사진 한 장으로 이모티콘 24종 세트를 자동 생성. 지브리풍, 병맛 스케치, 미니멀 등 다양한 스타일 지원.">
+<meta property="og:url" content="https://revfactory.github.io/emoticon-maker/">
+<meta property="og:site_name" content="Emoticon Maker">
+<meta property="og:locale" content="ko_KR">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Emoticon Maker - AI 이모티콘 생성">
+<meta name="twitter:description" content="사진 한 장으로 이모티콘 24종 세트를 자동 생성. Gemini AI 기반 무료 서비스.">
+<!-- License -->
+<meta name="license" content="Apache-2.0 WITH Commons Clause">
+<meta name="rights" content="Apache 2.0 + Commons Clause. 상업적 판매 불가.">
+<!-- Canonical -->
+<link rel="canonical" href="https://revfactory.github.io/emoticon-maker/">
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JTHB7X8VGR"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-JTHB7X8VGR');
+</script>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai"
+  }
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">Emoticon Maker</div>
+    <div class="key-status" id="keyStatus" style="display:none;">
+      <span class="key-mask" id="keyMask"></span>
+      <button class="key-change-btn" id="keyChangeBtn">키 변경</button>
+    </div>
+  </header>
+
+  <!-- Step Indicator -->
+  <nav class="step-indicator" id="stepIndicator"></nav>
+
+  <!-- Main -->
+  <main class="main">
+    <!-- Step 1: API Key -->
+    <section class="step-section step-api-key" id="step-api_key">
+      <div class="card">
+        <h1 class="title">Gemini API 키를 입력하세요</h1>
+        <p class="desc">키는 브라우저에만 임시 저장되며 서버로 전송되지 않습니다</p>
+        <div class="link-row">
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio에서 발급받기 &rarr;</a>
+        </div>
+        <div class="input-wrap">
+          <input type="password" class="input-field mono" id="apiKeyInput" placeholder="API 키를 붙여넣으세요" autocomplete="off">
+          <button class="toggle-vis" id="toggleKeyVis" type="button" aria-label="키 표시 토글">&#128065;</button>
+        </div>
+        <div class="error-msg" id="apiKeyError"></div>
+        <button class="btn-primary" id="apiKeySubmit">확인</button>
+        <div class="success-msg" id="apiKeySuccess" style="display:none;">&#10003; 키가 확인되었습니다</div>
+      </div>
+    </section>
+
+    <!-- Step 2: Upload -->
+    <section class="step-section step-upload" id="step-upload">
+      <div class="drop-zone" id="dropZone">
+        <div class="icon">&#128247;</div>
+        <div class="text">사진을 드래그하거나 클릭하세요</div>
+        <div class="hint">JPG, PNG, WebP (최대 10MB)</div>
+        <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" hidden>
+      </div>
+      <div class="upload-preview" id="uploadPreview">
+        <img id="previewImg" alt="업로드된 사진">
+        <div class="btn-row">
+          <button class="btn-ghost" id="reUploadBtn">다른 사진 선택</button>
+          <button class="btn-primary" id="toStyleBtn">다음 단계 &rarr;</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 3: Style -->
+    <section class="step-section step-style" id="step-style">
+      <img class="photo-thumb" id="stylePhotoThumb" alt="업로드한 사진">
+      <h2 class="title">어떤 스타일로 만들까요?</h2>
+      <div class="style-tabs">
+        <button class="style-tab active" data-tab="presets">추천 스타일</button>
+        <button class="style-tab" data-tab="custom">직접 입력</button>
+      </div>
+      <div class="style-tab-content" id="tabPresets">
+        <div class="style-grid" id="styleGrid"></div>
+      </div>
+      <div class="style-tab-content" id="tabCustom" style="display:none;">
+        <div class="custom-prompt-area">
+          <textarea id="customPromptInput" placeholder="원하는 스타일을 자유롭게 설명해주세요&#10;&#10;예시:&#10;• 피카소 큐비즘 스타일, 파스텔 톤&#10;• 수묵화 느낌의 동양적 캐릭터&#10;• 레트로 8비트 픽셀아트 스타일"></textarea>
+        </div>
+      </div>
+      <button class="btn-primary" id="generateBaseBtn" disabled>캐릭터 만들기 &rarr;</button>
+    </section>
+
+    <!-- Step 4: Base Review -->
+    <section class="step-section step-base-review" id="step-base_review">
+      <div class="base-image-container" id="baseImageContainer">
+        <div class="skeleton skeleton-box" id="baseSkeleton" style="display:none;">
+          <span class="loading-text">캐릭터 생성중<span class="loading-dots"></span></span>
+        </div>
+        <img id="baseImage" alt="베이스 캐릭터" style="display:none;">
+      </div>
+      <input class="base-name-input" id="charNameInput" placeholder="캐릭터 이름 (선택)" value="My Character">
+      <div class="base-actions">
+        <button class="btn-primary" id="confirmBaseBtn">이 캐릭터로 진행 &rarr;</button>
+        <button class="btn-ghost" id="regenerateBaseBtn">&#128260; 다시 만들기</button>
+        <button class="btn-ghost sm" id="changeStyleBtn">&larr; 스타일 변경</button>
+      </div>
+    </section>
+
+    <!-- Step 5: Emoticon List -->
+    <section class="step-section step-emoticon-list" id="step-emoticon_list">
+      <h2 class="title">이모티콘 구성을 확인하세요</h2>
+      <p class="desc">AI가 제안한 24가지 감정/상황입니다. 다른 구성을 원하면 '다른 구성으로'를 누르세요.</p>
+      <div class="list-skeleton" id="listSkeleton" style="display:none;"></div>
+      <div class="emoticon-list-grid" id="emoticonListGrid"></div>
+      <button class="btn-primary" id="confirmListBtn">이대로 만들기 &rarr;</button>
+    </section>
+
+    <!-- Step 6: Generating -->
+    <section class="step-section step-generating" id="step-generating">
+      <div class="progress-ring-wrap">
+        <svg viewBox="0 0 160 160">
+          <circle class="bg-circle" cx="80" cy="80" r="72"></circle>
+          <circle class="fg-circle" id="progressCircle" cx="80" cy="80" r="72" stroke-dasharray="452.39" stroke-dashoffset="452.39"></circle>
+        </svg>
+        <div class="center-text">
+          <div class="num" id="progressNum">0/4</div>
+          <div class="sub" id="progressSub">준비 중...</div>
+        </div>
+      </div>
+      <div class="progress-detail" id="progressDetail">이모티콘 시트를 생성합니다...</div>
+      <div class="sheet-strip" id="sheetStrip"></div>
+      <div class="progress-hint">약 1~2분 소요</div>
+      <button class="btn-ghost sm retry-btn" id="retrySheetBtn" style="display:none;">실패한 시트 재시도</button>
+    </section>
+
+    <!-- Step 7: Complete -->
+    <section class="step-section step-complete" id="step-complete">
+      <div class="complete-header">
+        <img class="avatar" id="completeAvatar" alt="캐릭터">
+        <div class="char-name" id="completeCharName"></div>
+      </div>
+      <div class="special-images" id="specialImages"></div>
+      <div class="emoticon-grid" id="emoticonGrid"></div>
+      <div class="download-section">
+        <button class="btn-primary" id="downloadZipBtn">&#128230; 전체 다운로드 (ZIP)</button>
+        <button class="btn-link" id="newSetBtn">새 이모티콘 만들기</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">&copy; 2026 Hwang Minho (revfactory@gmail.com) · Apache 2.0 + Commons Clause — 상업적 판매 불가</footer>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <button class="modal-nav prev" id="modalPrev">&larr;</button>
+  <div class="modal-content">
+    <button class="modal-close" id="modalClose">&times;</button>
+    <img id="modalImage" alt="이모티콘 확대">
+    <div class="modal-label" id="modalLabel"></div>
+    <div class="modal-num" id="modalNum"></div>
+  </div>
+  <button class="modal-nav next" id="modalNext">&rarr;</button>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
