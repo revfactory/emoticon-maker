@@ -381,7 +381,7 @@ function initUpload() {
     const isFull = state.uploadedPhotos.length >= MAX_PHOTOS;
     dropZone.style.display = isFull ? 'none' : 'flex';
     dropZone.classList.toggle('compact', hasPhotos && !isFull);
-    uploadActions.style.display = hasPhotos ? 'flex' : 'none';
+    uploadActions.classList.toggle('visible', hasPhotos);
   }
 
   async function savePhotosToDb() {
@@ -1138,7 +1138,7 @@ function initDownload() {
     state.characterName = 'My Character';
     document.getElementById('charNameInput').value = 'My Character';
     document.getElementById('photoGrid').innerHTML = '';
-    document.getElementById('uploadActions').style.display = 'none';
+    document.getElementById('uploadActions').classList.remove('visible');
     document.getElementById('dropZone').style.display = 'flex';
     document.getElementById('dropZone').classList.remove('compact');
     document.getElementById('fileInput').value = '';

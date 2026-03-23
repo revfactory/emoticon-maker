@@ -231,7 +231,8 @@ a { color: inherit; }
 .drop-zone.compact .text { font-size: 13px; }
 .drop-zone.compact .hint { font-size: 12px; }
 .btn-row { display: flex; gap: 12px; justify-content: center; }
-.upload-actions { display: flex; gap: 12px; margin-top: 16px; }
+.upload-actions { display: none; gap: 12px; margin-top: 16px; }
+.upload-actions.visible { display: flex; }
 .upload-actions .btn-ghost { flex: 1; }
 .upload-actions .btn-primary { flex: 2; }
 
