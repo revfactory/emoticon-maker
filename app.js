@@ -62,7 +62,6 @@ const state = {
   sheets: [],
   emoticons: [],
   mainImage: null,
-  tabImage: null,
   failedSheets: [],
   setId: null
 };
@@ -993,12 +992,6 @@ async function generateSpecialImages() {
   state.mainImage = await mainCanvas.convertToBlob({ type: 'image/png' });
   await dbPut('mainImage', state.mainImage);
 
-  // Tab image 96x74
-  const tabCanvas = new OffscreenCanvas(96, 74);
-  const tabCtx = tabCanvas.getContext('2d');
-  tabCtx.drawImage(mainBitmap, 0, 0, 96, 74);
-  state.tabImage = await tabCanvas.convertToBlob({ type: 'image/png' });
-  await dbPut('tabImage', state.tabImage);
 }
 
 // ===== Step 7: Complete =====
@@ -1026,20 +1019,6 @@ function showComplete() {
     mainItem.appendChild(mainImg);
     mainItem.appendChild(mainLabel);
     specialContainer.appendChild(mainItem);
-  }
-  if (state.tabImage) {
-    const tabItem = document.createElement('div');
-    tabItem.className = 'special-item';
-    const tabImg = document.createElement('img');
-    tabImg.src = URL.createObjectURL(state.tabImage);
-    tabImg.width = 96;
-    tabImg.alt = '탭 이미지';
-    const tabLabel = document.createElement('div');
-    tabLabel.className = 'label-text';
-    tabLabel.textContent = '탭 96\u00D774';
-    tabItem.appendChild(tabImg);
-    tabItem.appendChild(tabLabel);
-    specialContainer.appendChild(tabItem);
   }
 
   // Emoticon grid
@@ -1125,7 +1104,6 @@ function initDownload() {
     try {
       const zip = new JSZip();
       if (state.mainImage) zip.file('main.png', state.mainImage);
-      if (state.tabImage) zip.file('tab.png', state.tabImage);
       state.emoticons.forEach((emo, i) => {
         if (emo && emo.blob) {
           zip.file(`${String(i + 1).padStart(2, '0')}.png`, emo.blob);
@@ -1149,7 +1127,6 @@ function initDownload() {
     state.sheets = [];
     state.emoticons = [];
     state.mainImage = null;
-    state.tabImage = null;
     state.baseCharacter = null;
     state.baseCharacterUrl = null;
     state.baseCharacterBase64 = null;
@@ -1238,7 +1215,6 @@ async function tryRestore() {
 
     state.emoticons = emoticons;
     state.mainImage = mainBlob;
-    state.tabImage = await dbGet('tabImage');
     if (baseBlob) {
       state.baseCharacter = baseBlob;
       state.baseCharacterUrl = URL.createObjectURL(baseBlob);
