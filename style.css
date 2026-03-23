@@ -99,7 +99,7 @@ a { color: inherit; }
 .drop-zone.compact .hint { font-size: 12px; }
 
 /* ===== Upload actions visible state ===== */
-.upload-actions.visible { display: flex; }
+.upload-actions.visible { display: block; }
 
 /* ===== Photo grid item ===== */
 .photo-grid-item {
