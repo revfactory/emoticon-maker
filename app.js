@@ -16,7 +16,7 @@ const STYLE_PRESETS = [
   { id: 'minimal', name: '미니멀 라인', emoji: '✏️', description: '심플한 선화, 최소 디테일', prompt: 'Create a minimal line art character based on the reference photo, capturing the person\'s distinctive features (hairstyle, face shape, glasses, accessories) with clean simple black outlines, very few details, flat colors, modern minimalist illustration style' },
   { id: 'cute3d', name: '귀여운 3D', emoji: '🧸', description: '쫀득쫀득 마시멜로 3D 캐릭터', prompt: 'Create a cute squishy 3D marshmallow character based on the reference photo, capturing the person\'s distinctive features (hairstyle, face shape, glasses, accessories) with soft round shapes, clay-like texture, pastel colors, adorable chibi proportions, 3D rendered look' },
   { id: 'anime', name: '애니메이션', emoji: '🎌', description: '일본 애니메이션 스타일 SD 캐릭터', prompt: 'Create a Japanese anime style super-deformed (SD/chibi) character based on the reference photo, capturing the person\'s distinctive features (hairstyle, face shape, glasses, accessories) with big expressive eyes, colorful, typical anime cel-shading style' },
-  { id: 'realistic', name: '실사화', emoji: '📸', description: '실제 사진처럼 리얼한 캐릭터', prompt: 'Create a photorealistic miniature figurine character based on the reference photo, capturing the person\'s exact appearance (face, hairstyle, skin tone, glasses, accessories) as a high-quality collectible figure photographed in a studio with soft lighting, realistic proportions but slightly stylized with a cute chibi body ratio, hyper-detailed skin texture and clothing materials' }
+  { id: 'realistic', name: '실사화', emoji: '📸', description: '실제 사진처럼 리얼한 캐릭터', prompt: 'Generate a photorealistic 3D render of a cute stylized character based on the reference photo. The character should look like a high-end vinyl art toy or designer collectible figure with slightly oversized head and compact body. Capture the person\'s exact face, hairstyle, skin tone, and accessories. Studio photography lighting, shallow depth of field, soft shadows on white seamless background. Shot with 85mm lens, f/2.8. No illustration, no painting, no cartoon — pure photorealistic 3D render quality', isRealistic: true }
 ];
 let aiSuggestedStyles = [];
 
@@ -609,7 +609,8 @@ async function generateBaseCharacter() {
   }
 
   const photoCount = state.uploadedPhotos.length;
-  const prompt = `I'm uploading ${photoCount} reference photo(s) of a real person. Create a single character illustration that MUST closely resemble this specific person. Style: ${stylePrompt}.
+  const isRealistic = state.selectedStyle.isRealistic;
+  const prompt = `I'm uploading ${photoCount} reference photo(s) of a real person. ${isRealistic ? 'Generate' : 'Create'} a single ${isRealistic ? 'stylized character' : 'character illustration'} that MUST closely resemble this specific person. Style: ${stylePrompt}.
 This will be used as a base character for a set of 24 emoticons/stickers.
 CRITICAL — Reference photo matching:
 - You MUST carefully study ALL ${photoCount} attached reference photo(s)
@@ -622,7 +623,7 @@ Rules:
 - White background
 - The character should be expressive and suitable for various emotions
 - Square 1:1 aspect ratio
-- Cute, round, and chibi-proportioned`;
+${isRealistic ? '- Slightly oversized head with compact body proportions (vinyl toy ratio)' : '- Cute, round, and chibi-proportioned'}`;
 
   const parts = [{ text: prompt }];
   state.uploadedPhotos.forEach(photo => {
@@ -826,7 +827,8 @@ async function generateSingleSheet(sheetIdx, styleDesc, completedRef) {
   const defs = state.emoticonDefinitions.slice(startEmo, startEmo + 6);
   const defsText = defs.map((d, i) => `${startEmo + i + 1}. ${d.label}: ${d.prompt}`).join('\n');
 
-  const sheetPrompt = `I am attaching a reference character image. You MUST draw THE EXACT SAME CHARACTER in 6 different poses.
+    const isRealisticStyle = state.selectedStyle?.isRealistic;
+    const sheetPrompt = `I am attaching a reference character image. You MUST ${isRealisticStyle ? 'render' : 'draw'} THE EXACT SAME CHARACTER in 6 different poses.
 
 CHARACTER IDENTITY (MUST MATCH EXACTLY):
 - Copy the EXACT same character from the attached reference image
@@ -844,7 +846,7 @@ RULES:
 - EXACTLY 6 characters, one per cell. Each is the SAME character in a different pose.
 - Each pose/expression must be clearly different and exaggerated.
 - Full body, centered in each cell with generous padding.
-- ABSOLUTELY NO TEXT anywhere in the image. No numbers, no labels, no titles, no words in any language. The image must contain ONLY illustrations with zero text/typography.
+- ABSOLUTELY NO TEXT anywhere in the image. No numbers, no labels, no titles, no words in any language. The image must contain ONLY ${isRealisticStyle ? 'renders' : 'illustrations'} with zero text/typography.
 - Style: ${styleDesc}`;
 
   const generateOnce = async () => {
