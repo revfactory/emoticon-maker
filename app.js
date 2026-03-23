@@ -820,6 +820,202 @@ function initEmoticonList() {
 }
 
 // ===== Step 6: Generation =====
+
+// 시트 이미지 검증 함수: Gemini에 생성된 시트를 보내 품질 검증
+async function validateSheet(sheetBlob, sheetIdx) {
+  try {
+    const base64Data = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result.split(',')[1]);
+      reader.readAsDataURL(sheetBlob);
+    });
+
+    const response = await callGeminiWithRetry(async () => {
+      return await state.ai.models.generateContent({
+        model: 'gemini-3.1-pro-preview',
+        contents: [{
+          role: 'user',
+          parts: [
+            { inlineData: { mimeType: 'image/png', data: base64Data } },
+            { text: `이 이모티콘 시트 이미지를 검증해주세요. 다음 항목을 확인하세요:
+1. 이 이미지에 정확히 6개의 캐릭터가 있는가?
+2. 3x2 그리드(3열 2행)로 배치되어 있는가?
+3. 불필요한 테두리/격자선이 있는가?
+4. 모든 캐릭터가 동일한 캐릭터인가? (포즈만 다르고 같은 캐릭터여야 함)
+
+반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 포함하지 마세요:
+{"valid": true 또는 false, "issues": ["문제1", "문제2"]}` }
+          ]
+        }],
+        config: {
+          responseModalities: ['TEXT']
+        }
+      });
+    });
+
+    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const result = JSON.parse(jsonMatch[0]);
+      return { valid: !!result.valid, issues: result.issues || [] };
+    }
+    // JSON 파싱 실패 시 통과 처리
+    console.warn(`Sheet ${sheetIdx} 검증 응답 파싱 실패, 통과 처리:`, text);
+    return { valid: true, issues: [] };
+  } catch (err) {
+    console.warn(`Sheet ${sheetIdx} 검증 중 오류, 통과 처리:`, err);
+    return { valid: true, issues: [] };
+  }
+}
+
+// 단일 시트 생성 함수: 생성 → 검증 → 재시도
+async function generateSingleSheet(sheetIdx, styleDesc, completedRef) {
+  const startEmo = sheetIdx * 6;
+  const defs = state.emoticonDefinitions.slice(startEmo, startEmo + 6);
+  const defsText = defs.map((d, i) => `${startEmo + i + 1}. ${d.label}: ${d.prompt}`).join('\n');
+
+  const sheetPrompt = `I am attaching a reference character image. You MUST draw THE EXACT SAME CHARACTER in 6 different poses.
+
+CHARACTER IDENTITY (MUST MATCH EXACTLY):
+- Copy the EXACT same character from the attached reference image
+- Same species (if animal, keep it as that animal — do NOT change to human or different animal)
+- Same face shape, body proportions, colors, and markings
+- Same clothing, accessories, and distinctive features
+- If the reference shows a cat, ALL 6 poses must be that same cat. If it shows a person, ALL 6 must be that same person.
+
+LAYOUT: 3-column x 2-row grid, pure white background, NO grid lines/borders/dividers.
+
+The 6 emoticon poses (left to right, top to bottom):
+${defsText}
+
+RULES:
+- EXACTLY 6 characters, one per cell. Each is the SAME character in a different pose.
+- Each pose/expression must be clearly different and exaggerated.
+- Full body, centered in each cell with generous padding.
+- NO text, labels, or words in the image.
+- Style: ${styleDesc}`;
+
+  const generateOnce = async () => {
+    const response = await callGeminiWithRetry(async () => {
+      return await state.ai.models.generateContent({
+        model: 'gemini-3.1-flash-image-preview',
+        contents: [{
+          role: 'user',
+          parts: [
+            { text: sheetPrompt },
+            { inlineData: { mimeType: 'image/png', data: state.baseCharacterBase64 } }
+          ]
+        }],
+        config: {
+          responseModalities: ['TEXT', 'IMAGE'],
+          imageConfig: { aspectRatio: '3:2', imageSize: '2K' }
+        }
+      });
+    });
+
+    let sheetBlob = null;
+    if (response.candidates && response.candidates[0]?.content?.parts) {
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData) {
+          sheetBlob = base64ToBlob(part.inlineData.data, part.inlineData.mimeType);
+          break;
+        }
+      }
+    }
+    if (!sheetBlob) throw new Error('No image in response');
+    return sheetBlob;
+  };
+
+  // 썸네일 상태 업데이트 헬퍼
+  const setThumbStatus = (status, blob) => {
+    const thumb = document.getElementById(`sheetThumb${sheetIdx}`);
+    if (status === 'generating') {
+      thumb.textContent = `${sheetIdx + 1}`;
+      thumb.className = 'sheet-thumb';
+    } else if (status === 'validating') {
+      thumb.innerHTML = '';
+      thumb.className = 'sheet-thumb';
+      if (blob) {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(blob);
+        img.style.opacity = '0.6';
+        thumb.appendChild(img);
+      }
+      const badge = document.createElement('span');
+      badge.className = 'validation-badge';
+      badge.textContent = '검증중';
+      badge.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);color:#fff;padding:2px 8px;border-radius:8px;font-size:11px;z-index:2;';
+      thumb.style.position = 'relative';
+      thumb.appendChild(badge);
+    } else if (status === 'done') {
+      thumb.innerHTML = '';
+      thumb.className = 'sheet-thumb done';
+      thumb.style.position = '';
+      if (blob) {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(blob);
+        thumb.appendChild(img);
+      }
+    } else if (status === 'error') {
+      thumb.innerHTML = '';
+      thumb.textContent = '!';
+      thumb.className = 'sheet-thumb sheet-error';
+      thumb.style.position = '';
+    }
+  };
+
+  try {
+    // 1. 시트 이미지 생성
+    setThumbStatus('generating');
+    let sheetBlob = await generateOnce();
+
+    // 2. 검증
+    setThumbStatus('validating', sheetBlob);
+    const validation = await validateSheet(sheetBlob, sheetIdx);
+
+    // 3. 검증 실패 시 1회 재생성
+    if (!validation.valid) {
+      showToast(`시트 ${sheetIdx + 1} 검증 실패, 재생성 중... (${validation.issues.join(', ')})`, 'info', 4000);
+      console.warn(`Sheet ${sheetIdx} validation failed:`, validation.issues);
+      setThumbStatus('generating');
+      await delay(2000);
+      sheetBlob = await generateOnce();
+
+      // 재생성 후 재검증
+      setThumbStatus('validating', sheetBlob);
+      const revalidation = await validateSheet(sheetBlob, sheetIdx);
+      if (!revalidation.valid) {
+        console.warn(`Sheet ${sheetIdx} 재검증 실패 (그래도 사용):`, revalidation.issues);
+        showToast(`시트 ${sheetIdx + 1} 재검증도 실패, 그대로 사용합니다.`, 'info');
+      }
+    }
+
+    // 4. 성공 처리
+    state.sheets[sheetIdx] = sheetBlob;
+    await dbPut(`sheet_${sheetIdx}`, sheetBlob);
+    setThumbStatus('done', sheetBlob);
+
+    // 5. 시트 분할
+    const emoticons = await splitSheet(sheetBlob, startEmo);
+    for (const emo of emoticons) {
+      state.emoticons[emo.index] = emo;
+      await dbPut(`emoticon_${emo.index}`, emo.blob);
+    }
+
+    // 6. progress 업데이트
+    completedRef.count++;
+    updateProgress(completedRef.count, 4, completedRef.count < 4 ? `${completedRef.count}/4 시트 완료...` : '완료!');
+
+    return { status: 'fulfilled', sheetIdx };
+  } catch (err) {
+    console.error(`Sheet ${sheetIdx} failed:`, err);
+    state.failedSheets.push(sheetIdx);
+    setThumbStatus('error');
+    showToast(`시트 ${sheetIdx + 1} 생성 실패`, 'error');
+    return { status: 'rejected', sheetIdx, reason: err };
+  }
+}
+
 async function startGeneration() {
   goToStep('generating');
   state.sheets = [];
@@ -845,95 +1041,25 @@ async function startGeneration() {
     styleDesc = state.customPrompt || 'cute cartoon character';
   }
 
-  for (let sheetIdx = 0; sheetIdx < 4; sheetIdx++) {
-    const startEmo = sheetIdx * 6;
-    const defs = state.emoticonDefinitions.slice(startEmo, startEmo + 6);
-    const defsText = defs.map((d, i) => `${startEmo + i + 1}. ${d.label}: ${d.prompt}`).join('\n');
+  // 완료 카운터 (병렬 실행 시 atomic 증가를 위한 공유 참조)
+  const completedRef = { count: 0 };
 
-    const sheetPrompt = `I am attaching a reference character image. You MUST draw THE EXACT SAME CHARACTER in 6 different poses.
+  // 배치 1: 시트 0, 1 병렬 생성
+  updateProgress(0, 4, '시트 1~2 생성 중...');
+  await Promise.allSettled([
+    generateSingleSheet(0, styleDesc, completedRef),
+    generateSingleSheet(1, styleDesc, completedRef)
+  ]);
 
-CHARACTER IDENTITY (MUST MATCH EXACTLY):
-- Copy the EXACT same character from the attached reference image
-- Same species (if animal, keep it as that animal — do NOT change to human or different animal)
-- Same face shape, body proportions, colors, and markings
-- Same clothing, accessories, and distinctive features
-- If the reference shows a cat, ALL 6 poses must be that same cat. If it shows a person, ALL 6 must be that same person.
+  // 배치 2: 시트 2, 3 병렬 생성 (rate limit 고려하여 약간 대기)
+  await delay(2000);
+  updateProgress(completedRef.count, 4, '시트 3~4 생성 중...');
+  await Promise.allSettled([
+    generateSingleSheet(2, styleDesc, completedRef),
+    generateSingleSheet(3, styleDesc, completedRef)
+  ]);
 
-LAYOUT: 3-column x 2-row grid, pure white background, NO grid lines/borders/dividers.
-
-The 6 emoticon poses (left to right, top to bottom):
-${defsText}
-
-RULES:
-- EXACTLY 6 characters, one per cell. Each is the SAME character in a different pose.
-- Each pose/expression must be clearly different and exaggerated.
-- Full body, centered in each cell with generous padding.
-- NO text, labels, or words in the image.
-- Style: ${styleDesc}`;
-
-    try {
-      if (sheetIdx > 0) await delay(2000);
-      updateProgress(sheetIdx, 4, `시트 ${sheetIdx + 1} 생성 중... (이모티콘 ${startEmo + 1}~${startEmo + 6})`);
-
-      const response = await callGeminiWithRetry(async () => {
-        return await state.ai.models.generateContent({
-          model: 'gemini-3.1-flash-image-preview',
-          contents: [{
-            role: 'user',
-            parts: [
-              { text: sheetPrompt },
-              { inlineData: { mimeType: 'image/png', data: state.baseCharacterBase64 } }
-            ]
-          }],
-          config: {
-            responseModalities: ['TEXT', 'IMAGE'],
-            imageConfig: { aspectRatio: '3:2', imageSize: '2K' }
-          }
-        });
-      });
-
-      let sheetBlob = null;
-      if (response.candidates && response.candidates[0]?.content?.parts) {
-        for (const part of response.candidates[0].content.parts) {
-          if (part.inlineData) {
-            sheetBlob = base64ToBlob(part.inlineData.data, part.inlineData.mimeType);
-            break;
-          }
-        }
-      }
-
-      if (!sheetBlob) throw new Error('No image in response');
-
-      state.sheets[sheetIdx] = sheetBlob;
-      await dbPut(`sheet_${sheetIdx}`, sheetBlob);
-
-      // Show sheet thumbnail
-      const thumb = document.getElementById(`sheetThumb${sheetIdx}`);
-      thumb.innerHTML = '';
-      thumb.classList.add('done');
-      const thumbImg = document.createElement('img');
-      thumbImg.src = URL.createObjectURL(sheetBlob);
-      thumb.appendChild(thumbImg);
-
-      // Split sheet
-      const emoticons = await splitSheet(sheetBlob, startEmo);
-      for (const emo of emoticons) {
-        state.emoticons[emo.index] = emo;
-        await dbPut(`emoticon_${emo.index}`, emo.blob);
-      }
-
-      updateProgress(sheetIdx + 1, 4, sheetIdx < 3 ? `시트 ${sheetIdx + 2} 준비 중...` : '완료!');
-
-    } catch (err) {
-      console.error(`Sheet ${sheetIdx} failed:`, err);
-      state.failedSheets.push(sheetIdx);
-      const thumb = document.getElementById(`sheetThumb${sheetIdx}`);
-      thumb.textContent = '!';
-      thumb.classList.add('sheet-error');
-      showToast(`시트 ${sheetIdx + 1} 생성 실패`, 'error');
-    }
-  }
-
+  // 결과 취합
   if (state.failedSheets.length > 0) {
     document.getElementById('retrySheetBtn').classList.remove('hidden');
     document.getElementById('progressDetail').textContent = `${4 - state.failedSheets.length}/4 시트 완성. 실패한 시트를 재시도해주세요.`;
