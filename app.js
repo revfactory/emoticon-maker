@@ -844,7 +844,7 @@ RULES:
 - EXACTLY 6 characters, one per cell. Each is the SAME character in a different pose.
 - Each pose/expression must be clearly different and exaggerated.
 - Full body, centered in each cell with generous padding.
-- NO text, labels, or words in the image.
+- ABSOLUTELY NO TEXT anywhere in the image. No numbers, no labels, no titles, no words in any language. The image must contain ONLY illustrations with zero text/typography.
 - Style: ${styleDesc}`;
 
   const generateOnce = async () => {
@@ -943,6 +943,12 @@ let sheetModalMode = false;
 function openSheetModal(sheetIdx) {
   currentSheetModalIndex = sheetIdx;
   sheetModalMode = true;
+  // 시트 모달은 더 크게 표시
+  const content = document.querySelector('.modal-content');
+  const img = document.getElementById('modalImage');
+  content.classList.add('!max-w-[600px]');
+  img.classList.add('!w-full', '!h-auto');
+  img.classList.remove('w-60', 'h-60');
   updateSheetModalContent();
   document.getElementById('modalOverlay').classList.add('open');
 }
@@ -1056,21 +1062,29 @@ async function startGeneration() {
   if (state.failedSheets.length > 0) {
     document.getElementById('retrySheetBtn').classList.remove('hidden');
     document.getElementById('progressDetail').textContent = `${4 - state.failedSheets.length}/4 시트 완성. 실패한 시트를 재시도해주세요.`;
-  } else {
-    await generateSpecialImages();
-    showComplete();
   }
+
+  // 생성 완료 — 이전/다음 버튼 표시 (자동 이동하지 않음)
+  if (state.failedSheets.length === 0) {
+    await generateSpecialImages();
+    document.getElementById('progressDetail').textContent = '모든 시트가 완성되었습니다!';
+  }
+  document.getElementById('generatingNav').classList.remove('hidden');
 }
 
 function initGenerating() {
   document.getElementById('retrySheetBtn').addEventListener('click', async () => {
     document.getElementById('retrySheetBtn').classList.add('hidden');
-    const failed = [...state.failedSheets];
-    state.failedSheets = [];
-    // Retry failed sheets (simplified — re-run startGeneration with only failed indices)
-    // For simplicity, just re-run the whole generation
     showToast('실패한 시트를 재생성합니다...', 'info');
     await startGeneration();
+  });
+  document.getElementById('backToListBtn').addEventListener('click', () => {
+    document.getElementById('generatingNav').classList.add('hidden');
+    goToStep('emoticon_list');
+  });
+  document.getElementById('goToCompleteBtn').addEventListener('click', () => {
+    document.getElementById('generatingNav').classList.add('hidden');
+    showComplete();
   });
 }
 
@@ -1220,6 +1234,14 @@ function openModal(index) {
 
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('open');
+  // 시트 모달 크기 복원
+  if (sheetModalMode) {
+    const content = document.querySelector('.modal-content');
+    const img = document.getElementById('modalImage');
+    content.classList.remove('!max-w-[600px]');
+    img.classList.remove('!w-full', '!h-auto');
+    img.classList.add('w-60', 'h-60');
+  }
   sheetModalMode = false;
   const sheetRetryModal = document.getElementById('modalSheetRetryBtn');
   if (sheetRetryModal) sheetRetryModal.classList.add('hidden');

@@ -200,6 +200,10 @@ tailwind.config = {
       <div class="sheet-strip flex gap-3 justify-center flex-wrap mb-6" id="sheetStrip"></div>
       <div class="progress-hint text-[13px] text-text-muted">약 1~2분 소요</div>
       <button class="btn-ghost sm retry-btn mt-4 hidden inline-flex h-10 bg-transparent text-primary border-[1.5px] border-[#E0E0E0] rounded-md text-sm font-medium items-center justify-center gap-2 transition-colors duration-150 hover:bg-subtle" id="retrySheetBtn">실패한 시트 재시도</button>
+      <div class="hidden mt-6 space-y-3" id="generatingNav">
+        <button class="btn-ghost w-full h-12 bg-transparent text-primary border-2 border-[#CCC] rounded-md text-[15px] font-medium flex items-center justify-center gap-2 transition-colors duration-150 hover:bg-subtle hover:border-[#999]" id="backToListBtn">&larr; 이모티콘 구성 변경</button>
+        <button class="btn-primary w-full h-12 bg-primary text-card rounded-md text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 hover:bg-[#333] active:scale-[0.98]" id="goToCompleteBtn">결과 확인 &rarr;</button>
+      </div>
     </section>
 
     <!-- Step 7: Complete -->
