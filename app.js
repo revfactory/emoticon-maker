@@ -1262,6 +1262,13 @@ async function init() {
   try { await openDB(); } catch (e) { console.warn('IndexedDB unavailable'); }
 
   renderStepIndicator();
+
+  // 로고 클릭 시 처음으로 이동 (API 키 있으면 업로드 단계, 없으면 키 입력 단계)
+  document.querySelector('.logo').style.cursor = 'pointer';
+  document.querySelector('.logo').addEventListener('click', () => {
+    goToStep(state.apiKey ? 'upload' : 'api_key');
+  });
+
   initApiKey();
   initUpload();
   initStyle();
