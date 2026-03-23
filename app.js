@@ -9,6 +9,7 @@ import { GoogleGenAI } from '@google/genai';
 
 // ===== Constants =====
 const STEPS = ['api_key', 'upload', 'style', 'base_review', 'emoticon_list', 'generating', 'complete'];
+const MAX_PHOTOS = 3;
 const STYLE_PRESETS = [
   { id: 'byungmat', name: '병맛 스케치', emoji: '🎨', description: '대충 그린 듯한 뀨여운 병맛 캐릭터', prompt: 'Create a funny crude sketch style character based on the reference photo, capturing the person\'s distinctive features (hairstyle, face shape, glasses, accessories) in an intentionally messy and cute doodle style with exaggerated expressions, simple colored pencil look' },
   { id: 'ghibli', name: '지브리풍', emoji: '🌸', description: '미야자키 스타일 수채화 감성', prompt: 'Create a Studio Ghibli / Miyazaki style watercolor character based on the reference photo, capturing the person\'s distinctive features (hairstyle, face shape, glasses, accessories) with soft pastel colors, gentle warm lighting, hand-painted aesthetic with delicate details' },
@@ -50,10 +51,7 @@ const state = {
   currentStep: 'api_key',
   apiKey: null,
   ai: null,
-  uploadedPhoto: null,
-  uploadedPhotoUrl: null,
-  uploadedPhotoBase64: null,
-  uploadedPhotoMime: null,
+  uploadedPhotos: [],  // [{file, url, base64, mime}] 최대 MAX_PHOTOS개
   selectedStyle: null,
   customPrompt: '',
   baseCharacter: null,
@@ -294,8 +292,8 @@ function initApiKey() {
 function initUpload() {
   const dropZone = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileInput');
-  const preview = document.getElementById('uploadPreview');
-  const previewImg = document.getElementById('previewImg');
+  const photoGrid = document.getElementById('photoGrid');
+  const uploadActions = document.getElementById('uploadActions');
 
   dropZone.addEventListener('click', () => fileInput.click());
   dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
@@ -303,50 +301,111 @@ function initUpload() {
   dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropZone.classList.remove('dragover');
-    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    handleFiles(Array.from(e.dataTransfer.files));
   });
   fileInput.addEventListener('change', () => {
-    if (fileInput.files.length) handleFile(fileInput.files[0]);
+    handleFiles(Array.from(fileInput.files));
+    fileInput.value = '';
   });
 
   document.getElementById('reUploadBtn').addEventListener('click', () => {
-    resetUpload();
-    fileInput.click();
+    resetAllPhotos();
   });
 
   document.getElementById('toStyleBtn').addEventListener('click', () => {
-    if (state.uploadedPhoto) {
-      document.getElementById('stylePhotoThumb').src = state.uploadedPhotoUrl;
+    if (state.uploadedPhotos.length > 0) {
+      renderStyleThumbs();
       goToStep('style');
     }
   });
 
-  async function handleFile(file) {
+  async function handleFiles(files) {
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      showToast('JPG, PNG, WebP 파일만 업로드할 수 있습니다.', 'error');
-      return;
+    for (const file of files) {
+      if (state.uploadedPhotos.length >= MAX_PHOTOS) {
+        showToast(`사진은 최대 ${MAX_PHOTOS}장까지 업로드할 수 있습니다.`, 'info');
+        break;
+      }
+      if (!validTypes.includes(file.type)) {
+        showToast('JPG, PNG, WebP 파일만 업로드할 수 있습니다.', 'error');
+        continue;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        showToast('파일 크기가 10MB를 초과합니다.', 'error');
+        continue;
+      }
+      const url = URL.createObjectURL(file);
+      const base64 = await blobToBase64(file);
+      state.uploadedPhotos.push({ file, url, base64, mime: file.type });
+      await dbPut(`uploadedPhoto_${state.uploadedPhotos.length - 1}`, file);
     }
-    if (file.size > 10 * 1024 * 1024) {
-      showToast('파일 크기가 10MB를 초과합니다.', 'error');
-      return;
-    }
-    state.uploadedPhoto = file;
-    state.uploadedPhotoMime = file.type;
-    if (state.uploadedPhotoUrl) URL.revokeObjectURL(state.uploadedPhotoUrl);
-    state.uploadedPhotoUrl = URL.createObjectURL(file);
-    state.uploadedPhotoBase64 = await blobToBase64(file);
-    previewImg.src = state.uploadedPhotoUrl;
-    dropZone.style.display = 'none';
-    preview.style.display = 'block';
-    await dbPut('uploadedPhoto', file);
+    renderPhotoGrid();
   }
 
-  function resetUpload() {
-    dropZone.style.display = 'flex';
-    preview.style.display = 'none';
-    fileInput.value = '';
+  function removePhoto(index) {
+    const photo = state.uploadedPhotos[index];
+    if (photo.url) URL.revokeObjectURL(photo.url);
+    state.uploadedPhotos.splice(index, 1);
+    savePhotosToDb();
+    renderPhotoGrid();
   }
+
+  function resetAllPhotos() {
+    state.uploadedPhotos.forEach(p => { if (p.url) URL.revokeObjectURL(p.url); });
+    state.uploadedPhotos = [];
+    clearPhotosFromDb();
+    renderPhotoGrid();
+  }
+
+  function renderPhotoGrid() {
+    photoGrid.innerHTML = '';
+    state.uploadedPhotos.forEach((photo, i) => {
+      const item = document.createElement('div');
+      item.className = 'photo-grid-item';
+      const img = document.createElement('img');
+      img.src = photo.url;
+      img.alt = `업로드된 사진 ${i + 1}`;
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'delete-btn';
+      deleteBtn.textContent = '×';
+      deleteBtn.addEventListener('click', () => removePhoto(i));
+      item.appendChild(img);
+      item.appendChild(deleteBtn);
+      photoGrid.appendChild(item);
+    });
+    const hasPhotos = state.uploadedPhotos.length > 0;
+    const isFull = state.uploadedPhotos.length >= MAX_PHOTOS;
+    dropZone.style.display = isFull ? 'none' : 'flex';
+    dropZone.classList.toggle('compact', hasPhotos && !isFull);
+    uploadActions.style.display = hasPhotos ? 'flex' : 'none';
+  }
+
+  async function savePhotosToDb() {
+    for (let i = 0; i < MAX_PHOTOS; i++) {
+      if (i < state.uploadedPhotos.length) {
+        await dbPut(`uploadedPhoto_${i}`, state.uploadedPhotos[i].file);
+      } else {
+        await dbPut(`uploadedPhoto_${i}`, null);
+      }
+    }
+  }
+
+  async function clearPhotosFromDb() {
+    for (let i = 0; i < MAX_PHOTOS; i++) {
+      await dbPut(`uploadedPhoto_${i}`, null);
+    }
+  }
+}
+
+function renderStyleThumbs() {
+  const container = document.getElementById('stylePhotoThumbs');
+  container.innerHTML = '';
+  state.uploadedPhotos.forEach((photo, i) => {
+    const img = document.createElement('img');
+    img.src = photo.url;
+    img.alt = `사진 ${i + 1}`;
+    container.appendChild(img);
+  });
 }
 
 // ===== Step 3: Style =====
@@ -525,10 +584,12 @@ async function generateBaseCharacter() {
     stylePrompt = state.customPrompt || 'cute cartoon character style';
   }
 
-  const prompt = `I'm uploading a reference photo of a real person. Create a single character illustration that MUST closely resemble this specific person. Style: ${stylePrompt}.
+  const photoCount = state.uploadedPhotos.length;
+  const prompt = `I'm uploading ${photoCount} reference photo(s) of a real person. Create a single character illustration that MUST closely resemble this specific person. Style: ${stylePrompt}.
 This will be used as a base character for a set of 24 emoticons/stickers.
 CRITICAL — Reference photo matching:
-- You MUST carefully study the attached reference photo first
+- You MUST carefully study ALL ${photoCount} attached reference photo(s)
+- Use multiple angles/photos to build a more accurate representation of the person
 - Preserve the person's EXACT distinguishing features: face shape, hairstyle, hair color, skin tone, glasses, facial hair, accessories, clothing style
 - The character must be immediately recognizable as this specific person, not a generic character
 - Even in minimal/abstract styles, the key visual identity of the person must be preserved
@@ -539,16 +600,15 @@ Rules:
 - Square 1:1 aspect ratio
 - Cute, round, and chibi-proportioned`;
 
+  const parts = [{ text: prompt }];
+  state.uploadedPhotos.forEach(photo => {
+    parts.push({ inlineData: { mimeType: photo.mime, data: photo.base64 } });
+  });
+
   try {
     const response = await state.ai.models.generateContent({
       model: 'gemini-3.1-flash-image-preview',
-      contents: [{
-        role: 'user',
-        parts: [
-          { text: prompt },
-          { inlineData: { mimeType: state.uploadedPhotoMime, data: state.uploadedPhotoBase64 } }
-        ]
-      }],
+      contents: [{ role: 'user', parts }],
       config: {
         responseModalities: ['TEXT', 'IMAGE']
       }
@@ -1089,14 +1149,14 @@ function initDownload() {
     state.emoticonDefinitions = [];
     state.failedSheets = [];
     state.selectedStyle = null;
-    state.uploadedPhoto = null;
-    if (state.uploadedPhotoUrl) URL.revokeObjectURL(state.uploadedPhotoUrl);
-    state.uploadedPhotoUrl = null;
-    state.uploadedPhotoBase64 = null;
+    state.uploadedPhotos.forEach(p => { if (p.url) URL.revokeObjectURL(p.url); });
+    state.uploadedPhotos = [];
     state.characterName = 'My Character';
     document.getElementById('charNameInput').value = 'My Character';
+    document.getElementById('photoGrid').innerHTML = '';
+    document.getElementById('uploadActions').style.display = 'none';
     document.getElementById('dropZone').style.display = 'flex';
-    document.getElementById('uploadPreview').style.display = 'none';
+    document.getElementById('dropZone').classList.remove('compact');
     document.getElementById('fileInput').value = '';
     document.getElementById('baseImage').style.display = 'none';
     document.getElementById('baseSkeleton').style.display = 'none';
@@ -1175,6 +1235,15 @@ async function tryRestore() {
     if (baseBlob) {
       state.baseCharacter = baseBlob;
       state.baseCharacterUrl = URL.createObjectURL(baseBlob);
+    }
+    // Restore uploaded photos
+    for (let i = 0; i < MAX_PHOTOS; i++) {
+      const photoBlob = await dbGet(`uploadedPhoto_${i}`);
+      if (photoBlob) {
+        const url = URL.createObjectURL(photoBlob);
+        const base64 = await blobToBase64(photoBlob);
+        state.uploadedPhotos.push({ file: photoBlob, url, base64, mime: photoBlob.type || 'image/png' });
+      }
     }
     state.emoticonDefinitions = FALLBACK_DEFINITIONS; // Labels for restored set
     emoticons.forEach((emo, i) => {

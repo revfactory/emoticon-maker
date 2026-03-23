@@ -88,24 +88,22 @@
 
     <!-- Step 2: Upload -->
     <section class="step-section step-upload" id="step-upload">
+      <div class="photo-grid" id="photoGrid"></div>
       <div class="drop-zone" id="dropZone">
         <div class="icon">&#128247;</div>
         <div class="text">사진을 드래그하거나 클릭하세요</div>
-        <div class="hint">JPG, PNG, WebP (최대 10MB)</div>
-        <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" hidden>
+        <div class="hint">JPG, PNG, WebP (최대 10MB, 3장까지)</div>
+        <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple hidden>
       </div>
-      <div class="upload-preview" id="uploadPreview">
-        <img id="previewImg" alt="업로드된 사진">
-        <div class="btn-row">
-          <button class="btn-ghost" id="reUploadBtn">다른 사진 선택</button>
-          <button class="btn-primary" id="toStyleBtn">다음 단계 &rarr;</button>
-        </div>
+      <div class="btn-row upload-actions" id="uploadActions" style="display:none;">
+        <button class="btn-ghost" id="reUploadBtn">전체 삭제</button>
+        <button class="btn-primary" id="toStyleBtn">다음 단계 &rarr;</button>
       </div>
     </section>
 
     <!-- Step 3: Style -->
     <section class="step-section step-style" id="step-style">
-      <img class="photo-thumb" id="stylePhotoThumb" alt="업로드한 사진">
+      <div class="photo-thumbs" id="stylePhotoThumbs"></div>
       <h2 class="title">어떤 스타일로 만들까요?</h2>
       <div class="style-tabs">
         <button class="style-tab active" data-tab="presets">추천 스타일</button>

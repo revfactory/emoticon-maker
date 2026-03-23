@@ -212,17 +212,38 @@ a { color: inherit; }
 .drop-zone .text { font-size: 16px; color: var(--c-text-secondary); }
 .drop-zone .hint { font-size: 13px; color: var(--c-text-muted); }
 
-.upload-preview { display: none; text-align: center; }
-.upload-preview img {
-  max-height: 400px; object-fit: contain; border-radius: var(--r-lg);
-  margin: 0 auto 24px;
+.photo-grid { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+.photo-grid:empty { display: none; margin: 0; }
+.photo-grid-item {
+  position: relative; width: 140px; height: 140px;
+  border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-card);
 }
-.upload-preview .btn-row { display: flex; gap: 12px; }
-.upload-preview .btn-row .btn-ghost { flex: 1; }
-.upload-preview .btn-row .btn-primary { flex: 2; }
+.photo-grid-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-grid-item .delete-btn {
+  position: absolute; top: 6px; right: 6px; width: 24px; height: 24px;
+  border-radius: var(--r-full); background: rgba(0,0,0,0.6); color: #fff;
+  font-size: 14px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; border: none; transition: background 150ms; line-height: 1;
+}
+.photo-grid-item .delete-btn:hover { background: var(--c-error, #e53e3e); }
+.drop-zone.compact { height: 100px; border-radius: var(--r-md); }
+.drop-zone.compact .icon { font-size: 24px; }
+.drop-zone.compact .text { font-size: 14px; }
+.drop-zone.compact .hint { font-size: 12px; }
+.upload-actions { display: flex; gap: 12px; }
+.upload-actions .btn-ghost { flex: 1; }
+.upload-actions .btn-primary { flex: 2; }
 
 /* ===== Step 3: Style ===== */
 .step-style { text-align: center; }
+.photo-thumbs {
+  display: flex; gap: 8px; justify-content: center; margin: 0 auto 16px;
+}
+.photo-thumbs img {
+  width: 64px; height: 64px; border-radius: var(--r-full);
+  object-fit: cover; border: 3px solid var(--c-white); box-shadow: var(--shadow-card);
+}
+.photo-thumbs img + img { margin-left: -12px; }
 .step-style .photo-thumb {
   width: 80px; height: 80px; border-radius: var(--r-full);
   object-fit: cover; margin: 0 auto 16px;
@@ -496,8 +517,9 @@ a { color: inherit; }
   .modal-nav.next { right: 16px; }
   .base-actions { flex-direction: column; }
   .base-actions .btn-ghost.sm { width: 100%; }
-  .upload-preview .btn-row { flex-direction: column; }
-  .upload-preview .btn-row .btn-ghost, .upload-preview .btn-row .btn-primary { flex: 1; }
+  .photo-grid-item { width: 110px; height: 110px; }
+  .upload-actions { flex-direction: column; }
+  .upload-actions .btn-ghost, .upload-actions .btn-primary { flex: 1; }
   .special-images { flex-direction: column; align-items: center; }
   .step-api-key .card { padding: 32px 20px; }
   .step-api-key .title { font-size: 20px; }
