@@ -820,54 +820,7 @@ function initEmoticonList() {
 
 // ===== Step 6: Generation =====
 
-// 시트 이미지 검증 함수: Gemini에 생성된 시트를 보내 품질 검증
-async function validateSheet(sheetBlob, sheetIdx) {
-  try {
-    const base64Data = await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result.split(',')[1]);
-      reader.readAsDataURL(sheetBlob);
-    });
-
-    const response = await callGeminiWithRetry(async () => {
-      return await state.ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: [{
-          role: 'user',
-          parts: [
-            { inlineData: { mimeType: 'image/png', data: base64Data } },
-            { text: `이 이모티콘 시트 이미지를 검증해주세요. 다음 항목을 확인하세요:
-1. 이 이미지에 정확히 6개의 캐릭터가 있는가?
-2. 3x2 그리드(3열 2행)로 배치되어 있는가?
-3. 불필요한 테두리/격자선이 있는가?
-4. 모든 캐릭터가 동일한 캐릭터인가? (포즈만 다르고 같은 캐릭터여야 함)
-
-반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 포함하지 마세요:
-{"valid": true 또는 false, "issues": ["문제1", "문제2"]}` }
-          ]
-        }],
-        config: {
-          responseModalities: ['TEXT']
-        }
-      });
-    });
-
-    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const result = JSON.parse(jsonMatch[0]);
-      return { valid: !!result.valid, issues: result.issues || [] };
-    }
-    // JSON 파싱 실패 시 통과 처리
-    console.warn(`Sheet ${sheetIdx} 검증 응답 파싱 실패, 통과 처리:`, text);
-    return { valid: true, issues: [] };
-  } catch (err) {
-    console.warn(`Sheet ${sheetIdx} 검증 중 오류, 통과 처리:`, err);
-    return { valid: true, issues: [] };
-  }
-}
-
-// 단일 시트 생성 함수: 생성 → 검증 → 재시도
+// 단일 시트 생성 함수: 생성 → 분할 → 완료
 async function generateSingleSheet(sheetIdx, styleDesc, completedRef) {
   const startEmo = sheetIdx * 6;
   const defs = state.emoticonDefinitions.slice(startEmo, startEmo + 6);
@@ -928,68 +881,36 @@ RULES:
   // 썸네일 상태 업데이트 헬퍼
   const setThumbStatus = (status, blob) => {
     const thumb = document.getElementById(`sheetThumb${sheetIdx}`);
+    const retryBtn = document.getElementById(`sheetRetry${sheetIdx}`);
     if (status === 'generating') {
       thumb.textContent = `${sheetIdx + 1}`;
       thumb.className = 'sheet-thumb';
-    } else if (status === 'validating') {
-      thumb.innerHTML = '';
-      thumb.className = 'sheet-thumb';
-      if (blob) {
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(blob);
-        img.style.opacity = '0.6';
-        thumb.appendChild(img);
-      }
-      const badge = document.createElement('span');
-      badge.className = 'validation-badge';
-      badge.textContent = '검증중';
-      badge.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);color:#fff;padding:2px 8px;border-radius:8px;font-size:11px;z-index:2;';
-      thumb.style.position = 'relative';
-      thumb.appendChild(badge);
+      if (retryBtn) retryBtn.classList.add('hidden');
     } else if (status === 'done') {
       thumb.innerHTML = '';
       thumb.className = 'sheet-thumb done';
-      thumb.style.position = '';
       if (blob) {
         const img = document.createElement('img');
         img.src = URL.createObjectURL(blob);
         thumb.appendChild(img);
       }
+      // 시트 클릭 시 모달로 크게 보기
+      thumb.onclick = () => openSheetModal(sheetIdx);
+      if (retryBtn) retryBtn.classList.remove('hidden');
     } else if (status === 'error') {
       thumb.innerHTML = '';
       thumb.textContent = '!';
       thumb.className = 'sheet-thumb sheet-error';
-      thumb.style.position = '';
+      if (retryBtn) retryBtn.classList.add('hidden');
     }
   };
 
   try {
     // 1. 시트 이미지 생성
     setThumbStatus('generating');
-    let sheetBlob = await generateOnce();
+    const sheetBlob = await generateOnce();
 
-    // 2. 검증
-    setThumbStatus('validating', sheetBlob);
-    const validation = await validateSheet(sheetBlob, sheetIdx);
-
-    // 3. 검증 실패 시 1회 재생성
-    if (!validation.valid) {
-      showToast(`시트 ${sheetIdx + 1} 검증 실패, 재생성 중... (${validation.issues.join(', ')})`, 'info', 4000);
-      console.warn(`Sheet ${sheetIdx} validation failed:`, validation.issues);
-      setThumbStatus('generating');
-      await delay(2000);
-      sheetBlob = await generateOnce();
-
-      // 재생성 후 재검증
-      setThumbStatus('validating', sheetBlob);
-      const revalidation = await validateSheet(sheetBlob, sheetIdx);
-      if (!revalidation.valid) {
-        console.warn(`Sheet ${sheetIdx} 재검증 실패 (그래도 사용):`, revalidation.issues);
-        showToast(`시트 ${sheetIdx + 1} 재검증도 실패, 그대로 사용합니다.`, 'info');
-      }
-    }
-
-    // 4. 성공 처리
+    // 2. 성공 처리
     state.sheets[sheetIdx] = sheetBlob;
     await dbPut(`sheet_${sheetIdx}`, sheetBlob);
     setThumbStatus('done', sheetBlob);
@@ -1015,6 +936,68 @@ RULES:
   }
 }
 
+// ===== 시트 모달 보기 =====
+let currentSheetModalIndex = 0;
+let sheetModalMode = false;
+
+function openSheetModal(sheetIdx) {
+  currentSheetModalIndex = sheetIdx;
+  sheetModalMode = true;
+  updateSheetModalContent();
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function updateSheetModalContent() {
+  const sheetBlob = state.sheets[currentSheetModalIndex];
+  if (!sheetBlob) return;
+  const modalImage = document.getElementById('modalImage');
+  modalImage.src = URL.createObjectURL(sheetBlob);
+  document.getElementById('modalLabel').textContent = `시트 ${currentSheetModalIndex + 1}`;
+  const startEmo = currentSheetModalIndex * 6 + 1;
+  const endEmo = startEmo + 5;
+  document.getElementById('modalNum').textContent = `이모티콘 ${startEmo}~${endEmo}`;
+
+  // 모달 재생성 버튼 표시
+  let sheetRetryModal = document.getElementById('modalSheetRetryBtn');
+  if (!sheetRetryModal) {
+    sheetRetryModal = document.createElement('button');
+    sheetRetryModal.id = 'modalSheetRetryBtn';
+    sheetRetryModal.className = 'modal-sheet-retry-btn';
+    sheetRetryModal.textContent = '\u21BB 이 시트 재생성';
+    sheetRetryModal.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeModal();
+      regenerateSingleSheet(currentSheetModalIndex);
+    });
+    document.querySelector('.modal-content').appendChild(sheetRetryModal);
+  }
+  sheetRetryModal.classList.remove('hidden');
+}
+
+// ===== 개별 시트 재생성 =====
+async function regenerateSingleSheet(sheetIdx) {
+  let styleDesc = state.selectedStyle?.prompt || 'cute cartoon character';
+  if (state.selectedStyle?.id === 'custom') {
+    styleDesc = state.customPrompt || 'cute cartoon character';
+  }
+  const dummyRef = { count: 0 };
+  await generateSingleSheet(sheetIdx, styleDesc, dummyRef);
+
+  // 완성 페이지가 표시된 상태라면 해당 이모티콘 카드도 업데이트
+  if (state.currentStep === 'complete') {
+    const startEmo = sheetIdx * 6;
+    for (let i = startEmo; i < startEmo + 6; i++) {
+      const emo = state.emoticons[i];
+      if (!emo || !emo.blob) continue;
+      const card = document.querySelector(`.emoticon-card[data-index="${i}"]`);
+      if (card) {
+        const img = card.querySelector('img');
+        if (img) img.src = URL.createObjectURL(emo.blob);
+      }
+    }
+  }
+}
+
 async function startGeneration() {
   goToStep('generating');
   state.sheets = [];
@@ -1025,11 +1008,22 @@ async function startGeneration() {
   const strip = document.getElementById('sheetStrip');
   strip.innerHTML = '';
   for (let i = 0; i < 4; i++) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'sheet-thumb-wrapper';
     const thumb = document.createElement('div');
     thumb.className = 'sheet-thumb';
     thumb.id = `sheetThumb${i}`;
     thumb.textContent = `${i + 1}`;
-    strip.appendChild(thumb);
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'sheet-retry-btn hidden';
+    retryBtn.id = `sheetRetry${i}`;
+    retryBtn.dataset.sheet = i;
+    retryBtn.textContent = '\u21BB';
+    retryBtn.title = '이 시트 재생성';
+    retryBtn.addEventListener('click', () => regenerateSingleSheet(i));
+    wrapper.appendChild(thumb);
+    wrapper.appendChild(retryBtn);
+    strip.appendChild(wrapper);
   }
 
   updateProgress(0, 4, '준비 중...');
@@ -1226,6 +1220,9 @@ function openModal(index) {
 
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('open');
+  sheetModalMode = false;
+  const sheetRetryModal = document.getElementById('modalSheetRetryBtn');
+  if (sheetRetryModal) sheetRetryModal.classList.add('hidden');
 }
 
 function updateModalContent() {
@@ -1236,6 +1233,16 @@ function updateModalContent() {
   document.getElementById('modalNum').textContent = `${currentModalIndex + 1} / 24`;
 }
 
+function navigateModal(direction) {
+  if (sheetModalMode) {
+    currentSheetModalIndex = (currentSheetModalIndex + direction + 4) % 4;
+    updateSheetModalContent();
+  } else {
+    currentModalIndex = (currentModalIndex + direction + 24) % 24;
+    updateModalContent();
+  }
+}
+
 function initModal() {
   document.getElementById('modalClose').addEventListener('click', closeModal);
   document.getElementById('modalOverlay').addEventListener('click', (e) => {
@@ -1243,19 +1250,17 @@ function initModal() {
   });
   document.getElementById('modalPrev').addEventListener('click', (e) => {
     e.stopPropagation();
-    currentModalIndex = (currentModalIndex - 1 + 24) % 24;
-    updateModalContent();
+    navigateModal(-1);
   });
   document.getElementById('modalNext').addEventListener('click', (e) => {
     e.stopPropagation();
-    currentModalIndex = (currentModalIndex + 1) % 24;
-    updateModalContent();
+    navigateModal(1);
   });
   document.addEventListener('keydown', (e) => {
     if (!document.getElementById('modalOverlay').classList.contains('open')) return;
     if (e.key === 'Escape') closeModal();
-    if (e.key === 'ArrowLeft') { currentModalIndex = (currentModalIndex - 1 + 24) % 24; updateModalContent(); }
-    if (e.key === 'ArrowRight') { currentModalIndex = (currentModalIndex + 1) % 24; updateModalContent(); }
+    if (e.key === 'ArrowLeft') navigateModal(-1);
+    if (e.key === 'ArrowRight') navigateModal(1);
   });
 }
 

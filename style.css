@@ -206,6 +206,32 @@ a { color: inherit; }
 .sheet-thumb img { width: 100%; height: 100%; object-fit: cover; }
 /* Error state for failed sheets */
 .sheet-thumb.sheet-error { border-color: #EF4444; color: #EF4444; }
+.sheet-thumb.done { cursor: pointer; }
+.sheet-thumb.done:hover { transform: scale(1.05); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+
+/* Sheet thumb wrapper */
+.sheet-thumb-wrapper { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+/* Sheet retry button */
+.sheet-retry-btn {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid #E5E5E5; background: #fff;
+  font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 200ms;
+  color: #666;
+}
+.sheet-retry-btn:hover { background: #F5F5F5; color: #333; transform: rotate(90deg); }
+
+/* Modal sheet retry button */
+.modal-sheet-retry-btn {
+  margin-top: 12px; padding: 8px 16px;
+  border-radius: 12px; border: 1px solid #E5E5E5;
+  background: #fff; cursor: pointer;
+  font-size: 14px; color: #666;
+  transition: all 200ms;
+}
+.modal-sheet-retry-btn:hover { background: #F5F5F5; color: #333; }
 
 /* ===== Emoticon cards ===== */
 .emoticon-card {
