@@ -210,7 +210,7 @@ function renderStepIndicator() {
     dot.dataset.tooltip = STEP_LABELS[i];
     // 완료된 단계 클릭 시 해당 단계로 이동 (generating 단계 제외)
     if (i < currentIdx && s !== 'generating') {
-      dot.style.cursor = 'pointer';
+      dot.classList.add('cursor-pointer');
       dot.addEventListener('click', () => goToStep(s));
     }
     container.appendChild(dot);
@@ -250,12 +250,16 @@ function initApiKey() {
     errorEl.textContent = '';
     try {
       const ai = new GoogleGenAI({ apiKey: key });
-      await ai.models.generateContent({ model: 'gemini-3.1-pro-preview', contents: 'Hi' });
+      // 모델 목록 조회로 키 검증 (generateContent보다 훨씬 빠름)
+      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`);
+      if (!resp.ok) throw new Error('Invalid API key');
       state.apiKey = key;
       state.ai = ai;
       sessionStorage.setItem('gemini_api_key', key);
-      successEl.style.display = 'flex';
-      document.getElementById('keyStatus').style.display = 'flex';
+      successEl.classList.remove('hidden');
+      successEl.classList.add('flex');
+      document.getElementById('keyStatus').classList.remove('hidden');
+      document.getElementById('keyStatus').classList.add('flex');
       document.getElementById('keyMask').textContent = maskKey(key);
       setTimeout(() => goToStep('upload'), 500);
     } catch (err) {
@@ -275,9 +279,11 @@ function initApiKey() {
     state.apiKey = null;
     state.ai = null;
     sessionStorage.removeItem('gemini_api_key');
-    document.getElementById('keyStatus').style.display = 'none';
+    document.getElementById('keyStatus').classList.add('hidden');
+    document.getElementById('keyStatus').classList.remove('flex');
     input.value = '';
-    successEl.style.display = 'none';
+    successEl.classList.add('hidden');
+    successEl.classList.remove('flex');
     goToStep('api_key');
   });
 
@@ -286,7 +292,8 @@ function initApiKey() {
   if (savedKey) {
     state.apiKey = savedKey;
     state.ai = new GoogleGenAI({ apiKey: savedKey });
-    document.getElementById('keyStatus').style.display = 'flex';
+    document.getElementById('keyStatus').classList.remove('hidden');
+    document.getElementById('keyStatus').classList.add('flex');
     document.getElementById('keyMask').textContent = maskKey(savedKey);
     goToStep('upload');
   }
@@ -379,7 +386,11 @@ function initUpload() {
     });
     const hasPhotos = state.uploadedPhotos.length > 0;
     const isFull = state.uploadedPhotos.length >= MAX_PHOTOS;
-    dropZone.style.display = isFull ? 'none' : 'flex';
+    if (isFull) {
+      dropZone.classList.add('hidden');
+    } else {
+      dropZone.classList.remove('hidden');
+    }
     dropZone.classList.toggle('compact', hasPhotos && !isFull);
     uploadActions.classList.toggle('visible', hasPhotos);
   }
@@ -428,8 +439,13 @@ function initStyle() {
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       const target = tab.dataset.tab;
-      tabPresets.style.display = target === 'presets' ? '' : 'none';
-      tabCustom.style.display = target === 'custom' ? '' : 'none';
+      if (target === 'presets') {
+        tabPresets.classList.remove('hidden');
+        tabCustom.classList.add('hidden');
+      } else {
+        tabPresets.classList.add('hidden');
+        tabCustom.classList.remove('hidden');
+      }
 
       if (target === 'custom') {
         // 직접 입력 모드: 프리셋 선택 해제, 커스텀으로 전환
@@ -514,8 +530,8 @@ function initStyle() {
     const moreCard = grid.querySelector('.ai-more-card');
     if (!moreCard) return;
     const origHTML = moreCard.innerHTML;
-    moreCard.innerHTML = `<div class="emoji" style="animation:spin 1s linear infinite">⏳</div><div class="info"><div class="name">추천 생성 중...</div><div class="description">잠시만 기다려주세요</div></div>`;
-    moreCard.style.pointerEvents = 'none';
+    moreCard.innerHTML = `<div class="emoji animate-spin">⏳</div><div class="info"><div class="name">추천 생성 중...</div><div class="description">잠시만 기다려주세요</div></div>`;
+    moreCard.classList.add('pointer-events-none');
 
     try {
       const resp = await state.ai.models.generateContent({
@@ -554,7 +570,7 @@ Be creative and diverse. Examples of good styles: 수묵화, 팝아트, 레트�
     } catch (e) {
       console.error('AI style suggestion failed:', e);
       moreCard.innerHTML = origHTML;
-      moreCard.style.pointerEvents = '';
+      moreCard.classList.remove('pointer-events-none');
       showToast('스타일 추천에 실패했습니다. 다시 시도해주세요.', 'error');
     }
   }
@@ -581,8 +597,10 @@ async function generateBaseCharacter() {
   goToStep('base_review');
   const skeleton = document.getElementById('baseSkeleton');
   const img = document.getElementById('baseImage');
-  skeleton.style.display = 'flex';
-  img.style.display = 'none';
+  skeleton.classList.remove('hidden');
+  skeleton.classList.add('flex');
+  img.classList.add('hidden');
+  img.classList.remove('block');
 
   let stylePrompt = state.selectedStyle.prompt;
   if (state.selectedStyle.id === 'custom') {
@@ -629,8 +647,10 @@ Rules:
           if (state.baseCharacterUrl) URL.revokeObjectURL(state.baseCharacterUrl);
           state.baseCharacterUrl = URL.createObjectURL(blob);
           img.src = state.baseCharacterUrl;
-          skeleton.style.display = 'none';
-          img.style.display = 'block';
+          skeleton.classList.add('hidden');
+          skeleton.classList.remove('flex');
+          img.classList.remove('hidden');
+          img.classList.add('block');
           await dbPut('baseCharacter', blob);
           imageFound = true;
           break;
@@ -641,7 +661,8 @@ Rules:
       throw new Error('이미지가 응답에 포함되지 않았습니다.');
     }
   } catch (err) {
-    skeleton.style.display = 'none';
+    skeleton.classList.add('hidden');
+    skeleton.classList.remove('flex');
     handleApiError(err);
     goToStep('style');
   }
@@ -653,7 +674,8 @@ async function generateEmoticonList() {
   const grid = document.getElementById('emoticonListGrid');
   const skelWrap = document.getElementById('listSkeleton');
   grid.innerHTML = '';
-  skelWrap.style.display = 'grid';
+  skelWrap.classList.remove('hidden');
+  skelWrap.classList.add('grid');
   skelWrap.innerHTML = '';
   for (let i = 0; i < 24; i++) {
     const s = document.createElement('div');
@@ -699,7 +721,8 @@ async function generateEmoticonList() {
     state.emoticonDefinitions = FALLBACK_DEFINITIONS;
   }
 
-  skelWrap.style.display = 'none';
+  skelWrap.classList.add('hidden');
+  skelWrap.classList.remove('grid');
   renderEmoticonList();
 }
 
@@ -889,14 +912,13 @@ CRITICAL RULES:
       state.failedSheets.push(sheetIdx);
       const thumb = document.getElementById(`sheetThumb${sheetIdx}`);
       thumb.textContent = '!';
-      thumb.style.borderColor = 'var(--c-error)';
-      thumb.style.color = 'var(--c-error)';
+      thumb.classList.add('sheet-error');
       showToast(`시트 ${sheetIdx + 1} 생성 실패`, 'error');
     }
   }
 
   if (state.failedSheets.length > 0) {
-    document.getElementById('retrySheetBtn').style.display = 'inline-flex';
+    document.getElementById('retrySheetBtn').classList.remove('hidden');
     document.getElementById('progressDetail').textContent = `${4 - state.failedSheets.length}/4 시트 완성. 실패한 시트를 재시도해주세요.`;
   } else {
     await generateSpecialImages();
@@ -906,7 +928,7 @@ CRITICAL RULES:
 
 function initGenerating() {
   document.getElementById('retrySheetBtn').addEventListener('click', async () => {
-    document.getElementById('retrySheetBtn').style.display = 'none';
+    document.getElementById('retrySheetBtn').classList.add('hidden');
     const failed = [...state.failedSheets];
     state.failedSheets = [];
     // Retry failed sheets (simplified — re-run startGeneration with only failed indices)
@@ -1139,19 +1161,21 @@ function initDownload() {
     document.getElementById('charNameInput').value = 'My Character';
     document.getElementById('photoGrid').innerHTML = '';
     document.getElementById('uploadActions').classList.remove('visible');
-    document.getElementById('dropZone').style.display = 'flex';
+    document.getElementById('dropZone').classList.remove('hidden');
     document.getElementById('dropZone').classList.remove('compact');
     document.getElementById('fileInput').value = '';
-    document.getElementById('baseImage').style.display = 'none';
-    document.getElementById('baseSkeleton').style.display = 'none';
+    document.getElementById('baseImage').classList.add('hidden');
+    document.getElementById('baseImage').classList.remove('block');
+    document.getElementById('baseSkeleton').classList.add('hidden');
+    document.getElementById('baseSkeleton').classList.remove('flex');
     document.getElementById('emoticonListGrid').innerHTML = '';
     document.getElementById('emoticonGrid').innerHTML = '';
     document.getElementById('specialImages').innerHTML = '';
     document.getElementById('sheetStrip').innerHTML = '';
     document.getElementById('styleGrid').querySelectorAll('.style-card').forEach(c => c.classList.remove('selected'));
     document.querySelectorAll('.style-tab').forEach((t, i) => { t.classList.toggle('active', i === 0); });
-    document.getElementById('tabPresets').style.display = '';
-    document.getElementById('tabCustom').style.display = 'none';
+    document.getElementById('tabPresets').classList.remove('hidden');
+    document.getElementById('tabCustom').classList.add('hidden');
     document.getElementById('customPromptInput').value = '';
     document.getElementById('generateBaseBtn').disabled = true;
     aiSuggestedStyles = [];
@@ -1255,7 +1279,6 @@ async function init() {
   renderStepIndicator();
 
   // 로고 클릭 시 처음으로 이동 (API 키 있으면 업로드 단계, 없으면 키 입력 단계)
-  document.querySelector('.logo').style.cursor = 'pointer';
   document.querySelector('.logo').addEventListener('click', () => {
     goToStep(state.apiKey ? 'upload' : 'api_key');
   });
