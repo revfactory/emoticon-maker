@@ -509,12 +509,9 @@ a { color: inherit; }
   .emoticon-grid { grid-template-columns: repeat(3, 1fr); }
   .emoticon-list-grid { grid-template-columns: 1fr; }
   .list-skeleton { grid-template-columns: 1fr; }
-  .modal-content { max-width: 100%; border-radius: 0; border-top-left-radius: 24px; border-top-right-radius: 24px; position: fixed; bottom: 0; left: 0; right: 0; padding: 32px 24px; }
-  .modal-overlay.open { align-items: flex-end; }
-  .modal-overlay.open { flex-direction: row; align-items: flex-end; gap: 0; }
-  .modal-nav { position: fixed; bottom: 16px; z-index: 1001; width: 60px; height: 44px; }
-  .modal-nav.prev { left: 16px; }
-  .modal-nav.next { right: 16px; }
+  .modal-content { max-width: 90%; border-radius: var(--r-xl); padding: 32px 24px; }
+  .modal-overlay.open { align-items: center; justify-content: center; }
+  .modal-nav { width: 48px; height: 44px; }
   .base-actions { flex-direction: column; }
   .base-actions .btn-ghost.sm { width: 100%; }
   .photo-grid-item { width: 110px; height: 110px; }
