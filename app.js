@@ -22,30 +22,30 @@ const STYLE_PRESETS = [
 let aiSuggestedStyles = [];
 
 const FALLBACK_DEFINITIONS = [
-  { label: '인사/안녕', prompt: 'waving hello with a big cheerful smile, one hand raised high' },
-  { label: '고마워', prompt: 'bowing deeply with sparkling grateful tears' },
-  { label: '사랑해', prompt: 'heart-shaped eyes, hugging a big red heart' },
-  { label: '울음', prompt: 'sitting on ground crying dramatically, rivers of tears' },
-  { label: '화남', prompt: 'bright red face, steam shooting from ears, fists clenched' },
-  { label: '놀람', prompt: 'jaw dropping to floor, eyes popping out on springs' },
-  { label: 'ㅋㅋㅋ', prompt: 'rolling on floor laughing, tears of joy flying' },
-  { label: '좋아요', prompt: 'enthusiastic double thumbs up, sparkling eyes' },
-  { label: '미안', prompt: 'on knees with puppy dog eyes, hands clasped begging' },
-  { label: '축하', prompt: 'wearing party hat, throwing confetti, excited face' },
-  { label: '피곤', prompt: 'dark circles, soul leaving body as ghost' },
-  { label: '싫어', prompt: 'crossing arms in X shape, disgusted face' },
-  { label: '출근', prompt: 'dragging feet like zombie, briefcase in hand' },
-  { label: '퇴근', prompt: 'sprinting with cape flying, pure joy expression' },
-  { label: '밥먹자', prompt: 'drooling over steaming bowl of rice' },
-  { label: '커피', prompt: 'hugging giant coffee cup lovingly, hearts floating' },
-  { label: '잠와', prompt: 'sleeping with huge snot bubble, ZZZ floating' },
-  { label: '운동', prompt: 'lifting tiny dumbbells with noodle arms, sweating' },
-  { label: '공부', prompt: 'brain exploding, surrounded by stacks of books' },
-  { label: '쉿', prompt: 'finger on lips, shifty suspicious eyes' },
-  { label: '쇼핑', prompt: 'eyes as dollar signs, surrounded by shopping bags' },
-  { label: '잠깐', prompt: 'hand up in stop gesture, stern waiting face' },
-  { label: '파이팅', prompt: 'cheerleading with pom-poms, fired up face' },
-  { label: '바이바이', prompt: 'waving goodbye dramatically, single tear rolling' }
+  { label: '안녕!', prompt: 'jumping up energetically with both arms stretched wide open, huge grin, sparkles around, landing pose with one foot up' },
+  { label: '고마워', prompt: 'holding a glowing golden star gift forward with both hands, eyes squeezed shut in grateful smile, small happy tears' },
+  { label: '사랑해', prompt: 'spinning around with giant pink heart above head, eyes turned into hearts, surrounded by floating smaller hearts and sparkles' },
+  { label: '대박 웃김', prompt: 'literally rolling on the floor, slapping the ground, tears of laughter spraying out like fountains, face bright red' },
+  { label: '분노폭발', prompt: 'tiny body with massively inflated red head, volcanic eruption from top of head, clenched fists shaking, veins popping' },
+  { label: '깜짝!', prompt: 'launched backward into the air from shock, hair standing straight up, eyes as big as saucers, lightning bolt background' },
+  { label: '흑흑', prompt: 'sitting in a puddle of own tears that keeps growing, hugging knees, rain cloud directly above head pouring down' },
+  { label: '최고!', prompt: 'standing on top of a mountain triumphantly, cape blowing in wind, holding trophy, shooting star behind' },
+  { label: '미안해', prompt: 'shrunk to tiny size, hiding behind a huge "sorry" sign, trembling with exaggerated puppy dog eyes and quivering lip' },
+  { label: '축하해', prompt: 'popping champagne bottle with confetti explosion, wearing party hat, surrounded by balloons and streamers, dance pose' },
+  { label: '피곤...', prompt: 'melting into the floor like liquid, soul visibly floating out of body as ghost, dark circles so deep they look like bruises' },
+  { label: '싫어', prompt: 'building a brick wall between self and viewer, peeking over top with disgusted expression, holding "NO" sign' },
+  { label: '출근길', prompt: 'zombie-walking with briefcase dragging on ground, tie crooked, one shoe missing, dark storm cloud following overhead' },
+  { label: '퇴근!', prompt: 'rocket-launching from office chair into the sky, suit jacket thrown off mid-air, ecstatic freedom expression, speed lines' },
+  { label: '밥 먹자', prompt: 'aggressively chopsticking a mountain of food, cheeks stuffed like hamster, steam rising from multiple dishes around' },
+  { label: '커피 충전', prompt: 'plugging coffee cup into self like charging a battery, electricity sparks, gauge meter going from 0 to 100, eyes lighting up' },
+  { label: '잠 온다', prompt: 'head slowly falling forward then snapping back up repeatedly, massive snot bubble inflating, pillow materializing from thin air' },
+  { label: '운동 중', prompt: 'struggling to lift a barbell that is bending from weight, legs wobbling like jelly, sweat drops flying everywhere, determined face' },
+  { label: '읽씹 금지', prompt: 'staring intensely at phone screen, tapping it frantically, steam coming from ears, clock ticking in background' },
+  { label: '쉿 비밀', prompt: 'wearing detective hat and trench coat, holding magnifying glass, finger on lips, one eye peeking suspiciously to the side' },
+  { label: '돈 없음', prompt: 'turning wallet upside down with moths flying out, single tear, empty pockets pulled inside out, wind blowing tumbleweed' },
+  { label: '기다려', prompt: 'sitting cross-legged checking wristwatch impatiently, foot tapping rapidly, multiple clock faces spinning around head' },
+  { label: '파이팅!', prompt: 'power-up pose with aura flames blazing around body, headband tied tight, fist punching upward breaking through ceiling, determined eyes' },
+  { label: '바이바이', prompt: 'riding away on a rainbow while waving with both hands, getting smaller in distance, trail of sparkles behind, blowing kiss' }
 ];
 
 // ===== App State =====
@@ -685,24 +685,34 @@ async function generateEmoticonList() {
     skelWrap.appendChild(s);
   }
 
-  const prompt = `이 캐릭터로 카카오 이모티콘 24종을 만들려고 합니다.
-다양한 감정과 일상 상황을 커버하는 24개 이모티콘 목록을 만들어주세요.
+  const prompt = `I'm showing you a base character image. Design 24 emoticon scenarios that would work perfectly for this specific character in real messaging conversations.
 
-가이드라인:
-- 필수 카테고리: 인사(1), 감사(1), 사랑(1~2), 슬픔/울음(1), 화남(1), 놀람(1), 웃음(1~2), 긍정(1~2)
-- 일상 상황: 출퇴근, 식사, 커피, 수면, 운동, 공부, 쇼핑 등에서 6~8개
-- 소통 표현: 미안, 축하, 응원, 거절, 비밀, 기다려 등에서 4~6개
-- 인사/작별은 반드시 포함 (첫 번째, 마지막)
-- 각 prompt는 캐릭터의 구체적 포즈/표정/소품을 포함하는 영문 1~2문장
-- 매번 새로운 조합과 표현으로 다양성 확보
+IMPORTANT: Study the character's visual style, proportions, and personality from the attached image. Each scenario should feel natural for THIS character.
 
-정확히 24개 항목을 JSON 배열로 반환하세요. 다른 텍스트 없이 JSON만:
-[{ "label": "한글 레이블", "prompt": "english pose/expression description" }, ...]`;
+Guidelines:
+- ESSENTIAL emotions (8): greeting/hello, thank you, love, crying/sad, angry, surprised, laughing hard, thumbs up/approval
+- DAILY LIFE situations (8): commuting to work, leaving work, eating, coffee, sleepy, exercising, checking phone, broke/no money
+- COMMUNICATION expressions (8): sorry, congratulations, cheering/fighting, rejection/no, secret/shh, wait, excited, goodbye/bye
+
+For each prompt:
+- Describe DYNAMIC, EXAGGERATED poses and actions (not static standing poses)
+- Include specific props, effects, and background elements that enhance the scene
+- Use manga/comic-style action lines, sparkles, sweat drops, etc. for energy
+- Each prompt should be vivid enough to generate a visually distinct emoticon
+- First item must be greeting, last item must be goodbye
+
+Return EXACTLY 24 items as JSON array only, no other text:
+[{ "label": "한글 레이블 (2-5자)", "prompt": "detailed english action/pose/expression description with props and effects" }, ...]`;
+
+  const parts = [{ text: prompt }];
+  if (state.baseCharacterBase64) {
+    parts.push({ inlineData: { mimeType: 'image/png', data: state.baseCharacterBase64 } });
+  }
 
   try {
     const response = await state.ai.models.generateContent({
       model: 'gemini-3.1-pro-preview',
-      contents: prompt
+      contents: [{ role: 'user', parts }]
     });
 
     let text = response.text || '';
