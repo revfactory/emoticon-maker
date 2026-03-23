@@ -11,12 +11,12 @@ let GoogleGenAI;
 const STEPS = ['api_key', 'upload', 'style', 'base_review', 'emoticon_list', 'generating', 'complete'];
 const MAX_PHOTOS = 3;
 const STYLE_PRESETS = [
-  { id: 'byungmat', name: '병맛 스케치', emoji: '🎨', description: '대충 그린 듯한 뀨여운 병맛 캐릭터', prompt: 'Create a funny crude sketch style character based on the reference photo, capturing the person\'s distinctive features (hairstyle, face shape, glasses, accessories) in an intentionally messy and cute doodle style with exaggerated expressions, simple colored pencil look' },
-  { id: 'ghibli', name: '지브리풍', emoji: '🌸', description: '미야자키 스타일 수채화 감성', prompt: 'Create a Studio Ghibli / Miyazaki style watercolor character based on the reference photo, capturing the person\'s distinctive features (hairstyle, face shape, glasses, accessories) with soft pastel colors, gentle warm lighting, hand-painted aesthetic with delicate details' },
-  { id: 'minimal', name: '미니멀 라인', emoji: '✏️', description: '심플한 선화, 최소 디테일', prompt: 'Create a minimal line art character based on the reference photo, capturing the person\'s distinctive features (hairstyle, face shape, glasses, accessories) with clean simple black outlines, very few details, flat colors, modern minimalist illustration style' },
-  { id: 'cute3d', name: '귀여운 3D', emoji: '🧸', description: '쫀득쫀득 마시멜로 3D 캐릭터', prompt: 'Create a cute squishy 3D marshmallow character based on the reference photo, capturing the person\'s distinctive features (hairstyle, face shape, glasses, accessories) with soft round shapes, clay-like texture, pastel colors, adorable chibi proportions, 3D rendered look' },
-  { id: 'anime', name: '애니메이션', emoji: '🎌', description: '일본 애니메이션 스타일 SD 캐릭터', prompt: 'Create a Japanese anime style super-deformed (SD/chibi) character based on the reference photo, capturing the person\'s distinctive features (hairstyle, face shape, glasses, accessories) with big expressive eyes, colorful, typical anime cel-shading style' },
-  { id: 'realistic', name: '실사화', emoji: '📸', description: '실제 사진처럼 리얼한 캐릭터', prompt: 'Transform the reference photo into a cute chibi-proportioned version of the REAL person. This must look like an actual photograph of a real tiny human, NOT a 3D render, NOT a toy, NOT a figurine, NOT clay, NOT plastic. Real human skin with pores and texture, real hair strands, real fabric clothing. The person should have a slightly larger head and shorter body (about 3-head-tall proportion) but everything else must be photographic realism — like a real miniature person was photographed. Natural lighting, real shadows, shot on white background. Think tilt-shift photography of a real person shrunk down', isRealistic: true }
+  { id: 'byungmat', name: '병맛 스케치', emoji: '🎨', description: '대충 그린 듯한 뀨여운 병맛 캐릭터', prompt: 'Create a funny crude sketch style character based on the reference photo, capturing the subject\'s distinctive features (face shape, coloring, markings, fur/hair, accessories) in an intentionally messy and cute doodle style with exaggerated expressions, simple colored pencil look' },
+  { id: 'ghibli', name: '지브리풍', emoji: '🌸', description: '미야자키 스타일 수채화 감성', prompt: 'Create a Studio Ghibli / Miyazaki style watercolor character based on the reference photo, capturing the subject\'s distinctive features (face shape, coloring, markings, fur/hair, accessories) with soft pastel colors, gentle warm lighting, hand-painted aesthetic with delicate details' },
+  { id: 'minimal', name: '미니멀 라인', emoji: '✏️', description: '심플한 선화, 최소 디테일', prompt: 'Create a minimal line art character based on the reference photo, capturing the subject\'s distinctive features (face shape, coloring, markings, fur/hair, accessories) with clean simple black outlines, very few details, flat colors, modern minimalist illustration style' },
+  { id: 'cute3d', name: '귀여운 3D', emoji: '🧸', description: '쫀득쫀득 마시멜로 3D 캐릭터', prompt: 'Create a cute squishy 3D marshmallow character based on the reference photo, capturing the subject\'s distinctive features (face shape, coloring, markings, fur/hair, accessories) with soft round shapes, clay-like texture, pastel colors, adorable chibi proportions, 3D rendered look' },
+  { id: 'anime', name: '애니메이션', emoji: '🎌', description: '일본 애니메이션 스타일 SD 캐릭터', prompt: 'Create a Japanese anime style super-deformed (SD/chibi) character based on the reference photo, capturing the subject\'s distinctive features (face shape, coloring, markings, fur/hair, accessories) with big expressive eyes, colorful, typical anime cel-shading style' },
+  { id: 'realistic', name: '실사화', emoji: '📸', description: '실제 사진처럼 리얼한 캐릭터', prompt: 'Transform the reference photo subject into a cute chibi-proportioned version. If the subject is a cat, create a real cat. If a dog, a real dog. If a person, a real person. This must look like an actual photograph, NOT a 3D render, NOT a toy, NOT a figurine, NOT clay, NOT plastic. Real skin/fur texture, real lighting, real shadows. The subject should have a slightly larger head and shorter body (about 3-head-tall proportion) but everything else must be photographic realism — like a real miniature subject was photographed with tilt-shift. Natural studio lighting on white background', isRealistic: true }
 ];
 let aiSuggestedStyles = [];
 
@@ -610,20 +610,21 @@ async function generateBaseCharacter() {
 
   const photoCount = state.uploadedPhotos.length;
   const isRealistic = state.selectedStyle.isRealistic;
-  const prompt = `I'm uploading ${photoCount} reference photo(s) of a real person. ${isRealistic ? 'Generate' : 'Create'} a single ${isRealistic ? 'stylized character' : 'character illustration'} that MUST closely resemble this specific person. Style: ${stylePrompt}.
+  const prompt = `I'm uploading ${photoCount} reference photo(s). The subject could be a person, cat, dog, or any living being. ${isRealistic ? 'Generate' : 'Create'} a single ${isRealistic ? 'stylized character' : 'character illustration'} that MUST closely resemble this specific subject. Style: ${stylePrompt}.
 This will be used as a base character for a set of 24 emoticons/stickers.
 CRITICAL — Reference photo matching:
 - You MUST carefully study ALL ${photoCount} attached reference photo(s)
-- Use multiple angles/photos to build a more accurate representation of the person
-- Preserve the person's EXACT distinguishing features: face shape, hairstyle, hair color, skin tone, glasses, facial hair, accessories, clothing style
-- The character must be immediately recognizable as this specific person, not a generic character
-- Even in minimal/abstract styles, the key visual identity of the person must be preserved
+- Identify what the subject is (human, cat, dog, etc.) and keep it as the SAME species
+- If the photo shows a cat, create a cat character. If a person, create a person character.
+- Preserve the subject's EXACT distinguishing features: colors, markings, face shape, fur/hair, accessories
+- The character must be immediately recognizable as this specific subject, not a generic one
+- Even in minimal/abstract styles, the key visual identity must be preserved
 Rules:
 - Create ONE character only, centered in the frame, full body visible
 - White background
 - The character should be expressive and suitable for various emotions
 - Square 1:1 aspect ratio
-${isRealistic ? '- Slightly oversized head with compact body proportions (vinyl toy ratio)' : '- Cute, round, and chibi-proportioned'}`;
+${isRealistic ? '- Slightly oversized head with compact body proportions' : '- Cute, round, and chibi-proportioned'}`;
 
   const parts = [{ text: prompt }];
   state.uploadedPhotos.forEach(photo => {
