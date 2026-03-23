@@ -850,20 +850,25 @@ async function startGeneration() {
     const defs = state.emoticonDefinitions.slice(startEmo, startEmo + 6);
     const defsText = defs.map((d, i) => `${startEmo + i + 1}. ${d.label}: ${d.prompt}`).join('\n');
 
-    const sheetPrompt = `Using the reference character image, draw EXACTLY 6 emoticon poses arranged in a 3-column x 2-row grid on a pure white background.
+    const sheetPrompt = `I am attaching a reference character image. You MUST draw THE EXACT SAME CHARACTER in 6 different poses.
 
-The 6 emoticons (left to right, top to bottom):
+CHARACTER IDENTITY (MUST MATCH EXACTLY):
+- Copy the EXACT same character from the attached reference image
+- Same species (if animal, keep it as that animal — do NOT change to human or different animal)
+- Same face shape, body proportions, colors, and markings
+- Same clothing, accessories, and distinctive features
+- If the reference shows a cat, ALL 6 poses must be that same cat. If it shows a person, ALL 6 must be that same person.
+
+LAYOUT: 3-column x 2-row grid, pure white background, NO grid lines/borders/dividers.
+
+The 6 emoticon poses (left to right, top to bottom):
 ${defsText}
 
-CRITICAL RULES:
-- Draw EXACTLY 6 characters total. NOT more, NOT less. One character per grid cell.
-- 3 columns x 2 rows. Each cell is the same size.
-- Pure white background everywhere. NO grid lines, NO borders, NO dividers, NO separators between cells.
-- The characters are separated only by white space — no drawn lines or borders.
-- Keep the character consistent: same style, proportions, and outfit as the reference image.
+RULES:
+- EXACTLY 6 characters, one per cell. Each is the SAME character in a different pose.
 - Each pose/expression must be clearly different and exaggerated.
-- Full body character centered in each cell with generous padding.
-- Do NOT add any text, labels, or Korean/English words inside the image.
+- Full body, centered in each cell with generous padding.
+- NO text, labels, or words in the image.
 - Style: ${styleDesc}`;
 
     try {
