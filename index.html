@@ -43,163 +43,201 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        primary: '#111111',
+        bg: '#FAFAFA',
+        card: '#FFFFFF',
+        subtle: '#F5F5F5',
+        border: '#E5E5E5',
+        'border-active': '#111111',
+        error: '#EF4444',
+        success: '#22C55E',
+        kakao: '#FFE812',
+        placeholder: '#CCCCCC',
+        'text-secondary': '#888888',
+        'text-muted': '#BBBBBB',
+      },
+      fontFamily: {
+        primary: ['Pretendard Variable', 'Pretendard', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        mono: ['SF Mono', 'Fira Code', 'monospace'],
+      },
+      borderRadius: {
+        'sm': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'xl': '20px',
+      },
+      boxShadow: {
+        'card': '0 1px 3px rgba(0,0,0,0.06)',
+        'hover': '0 8px 24px rgba(0,0,0,0.1)',
+        'modal': '0 20px 60px rgba(0,0,0,0.2)',
+      }
+    }
+  }
+}
+</script>
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
-<div class="app">
+<body class="font-primary bg-bg text-primary leading-normal min-h-screen overflow-x-hidden antialiased">
+<div class="app max-w-[720px] mx-auto px-6 min-h-screen flex flex-col max-sm:px-4">
   <!-- Header -->
-  <header class="header">
-    <div class="logo">Emoticon Maker</div>
-    <div class="key-status" id="keyStatus" style="display:none;">
-      <span class="key-mask" id="keyMask"></span>
-      <button class="key-change-btn" id="keyChangeBtn">키 변경</button>
+  <header class="header h-16 flex items-center justify-between border-b border-border flex-shrink-0 sticky top-0 bg-bg z-[100]">
+    <div class="logo text-lg font-bold tracking-tight whitespace-nowrap cursor-pointer">Emoticon Maker</div>
+    <div class="key-status hidden items-center gap-2 text-[13px] text-text-secondary" id="keyStatus">
+      <span class="key-mask font-mono text-xs" id="keyMask"></span>
+      <button class="key-change-btn text-xs text-text-secondary underline cursor-pointer bg-transparent border-none p-1 hover:text-primary" id="keyChangeBtn">키 변경</button>
     </div>
   </header>
 
   <!-- Step Indicator -->
-  <nav class="step-indicator" id="stepIndicator"></nav>
+  <nav class="step-indicator flex items-center justify-center gap-0 pt-5 pb-6" id="stepIndicator"></nav>
 
   <!-- Main -->
-  <main class="main">
+  <main class="main flex-1 pb-12">
     <!-- Step 1: API Key -->
     <section class="step-section step-api-key" id="step-api_key">
-      <div class="card">
-        <h1 class="title">Gemini API 키를 입력하세요</h1>
-        <p class="desc">키는 브라우저에만 임시 저장되며 서버로 전송되지 않습니다</p>
-        <div class="link-row">
-          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio에서 발급받기 &rarr;</a>
+      <div class="card bg-card rounded-lg p-6 shadow-card max-sm:py-8 max-sm:px-5 py-12 px-8 text-center max-w-[480px] mx-auto">
+        <h1 class="title text-2xl max-sm:text-xl font-bold mb-2">Gemini API 키를 입력하세요</h1>
+        <p class="desc text-sm text-text-secondary mb-2">키는 브라우저에만 임시 저장되며 서버로 전송되지 않습니다</p>
+        <div class="link-row mb-6">
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" class="text-sm text-primary underline hover:text-[#333]">Google AI Studio에서 발급받기 &rarr;</a>
         </div>
-        <div class="input-wrap">
-          <input type="password" class="input-field mono" id="apiKeyInput" placeholder="API 키를 붙여넣으세요" autocomplete="off">
-          <button class="toggle-vis" id="toggleKeyVis" type="button" aria-label="키 표시 토글">&#128065;</button>
+        <div class="input-wrap relative mb-4">
+          <input type="password" class="input-field mono w-full h-12 px-4 rounded-md border-[1.5px] border-[#E0E0E0] text-[15px] bg-card text-primary outline-none transition-all duration-150 focus:border-border-active focus:shadow-[0_0_0_3px_rgba(0,0,0,0.05)] placeholder:text-placeholder font-mono text-sm" id="apiKeyInput" placeholder="API 키를 붙여넣으세요" autocomplete="off">
+          <button class="toggle-vis absolute right-3 top-1/2 -translate-y-1/2 text-lg cursor-pointer bg-transparent border-none p-1 text-text-secondary" id="toggleKeyVis" type="button" aria-label="키 표시 토글">&#128065;</button>
         </div>
-        <div class="error-msg" id="apiKeyError"></div>
-        <button class="btn-primary" id="apiKeySubmit">확인</button>
-        <div class="success-msg" id="apiKeySuccess" style="display:none;">&#10003; 키가 확인되었습니다</div>
+        <div class="error-msg text-[13px] text-error mt-2 text-left min-h-[20px]" id="apiKeyError"></div>
+        <button class="btn-primary w-full h-12 bg-primary text-card rounded-md text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 hover:bg-[#333] active:scale-[0.98] disabled:bg-border disabled:text-[#AAA] disabled:cursor-not-allowed" id="apiKeySubmit">확인</button>
+        <div class="success-msg text-sm text-success mt-3 hidden items-center justify-center gap-1.5" id="apiKeySuccess">&#10003; 키가 확인되었습니다</div>
       </div>
     </section>
 
     <!-- Step 2: Upload -->
     <section class="step-section step-upload" id="step-upload">
-      <div class="photo-grid" id="photoGrid"></div>
-      <div class="drop-zone" id="dropZone">
-        <div class="icon">&#128247;</div>
-        <div class="text">사진을 드래그하거나 클릭하세요</div>
-        <div class="hint">JPG, PNG, WebP (최대 10MB, 3장까지)</div>
+      <div class="photo-grid flex gap-3 justify-center flex-wrap mb-4 empty:hidden empty:m-0" id="photoGrid"></div>
+      <div class="drop-zone border-2 border-dashed border-[#D0D0D0] rounded-xl h-80 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 gap-3 hover:border-primary hover:bg-[rgba(0,0,0,0.02)]" id="dropZone">
+        <div class="icon text-5xl text-placeholder leading-none">&#128247;</div>
+        <div class="text text-base text-text-secondary">사진을 드래그하거나 클릭하세요</div>
+        <div class="hint text-[13px] text-text-muted">JPG, PNG, WebP (최대 10MB, 3장까지)</div>
         <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple hidden>
       </div>
-      <div class="btn-row upload-actions" id="uploadActions">
-        <button class="btn-ghost" id="reUploadBtn">전체 삭제</button>
-        <button class="btn-primary" id="toStyleBtn">다음 단계 &rarr;</button>
+      <div class="btn-row upload-actions hidden gap-3 mt-4 max-sm:flex-col max-sm:!gap-3" id="uploadActions">
+        <button class="btn-ghost sm:flex-1 max-sm:w-full h-12 bg-transparent text-primary border-[1.5px] border-[#E0E0E0] rounded-md text-[15px] font-medium flex items-center justify-center gap-2 transition-colors duration-150 hover:bg-subtle" id="reUploadBtn">전체 삭제</button>
+        <button class="btn-primary sm:flex-[2] max-sm:w-full h-12 bg-primary text-card rounded-md text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 hover:bg-[#333] active:scale-[0.98]" id="toStyleBtn">다음 단계 &rarr;</button>
       </div>
     </section>
 
     <!-- Step 3: Style -->
-    <section class="step-section step-style" id="step-style">
-      <div class="photo-thumbs" id="stylePhotoThumbs"></div>
-      <h2 class="title">어떤 스타일로 만들까요?</h2>
-      <div class="style-tabs">
-        <button class="style-tab active" data-tab="presets">추천 스타일</button>
-        <button class="style-tab" data-tab="custom">직접 입력</button>
+    <section class="step-section step-style text-center" id="step-style">
+      <div class="photo-thumbs flex gap-2 justify-center mx-auto mb-4" id="stylePhotoThumbs"></div>
+      <h2 class="title text-[22px] font-bold mb-6">어떤 스타일로 만들까요?</h2>
+      <div class="style-tabs flex gap-0 mb-5 border-b-2 border-border">
+        <button class="style-tab active flex-1 py-3 bg-transparent border-none border-b-2 border-transparent -mb-[2px] text-sm font-semibold text-text-secondary cursor-pointer transition-all duration-150 hover:text-primary" data-tab="presets">추천 스타일</button>
+        <button class="style-tab flex-1 py-3 bg-transparent border-none border-b-2 border-transparent -mb-[2px] text-sm font-semibold text-text-secondary cursor-pointer transition-all duration-150 hover:text-primary" data-tab="custom">직접 입력</button>
       </div>
       <div class="style-tab-content" id="tabPresets">
-        <div class="style-grid" id="styleGrid"></div>
+        <div class="style-grid grid grid-cols-2 max-sm:grid-cols-1 gap-3 text-left mb-6" id="styleGrid"></div>
       </div>
-      <div class="style-tab-content" id="tabCustom" style="display:none;">
+      <div class="style-tab-content hidden" id="tabCustom">
         <div class="custom-prompt-area">
-          <textarea id="customPromptInput" placeholder="원하는 스타일을 자유롭게 설명해주세요&#10;&#10;예시:&#10;• 피카소 큐비즘 스타일, 파스텔 톤&#10;• 수묵화 느낌의 동양적 캐릭터&#10;• 레트로 8비트 픽셀아트 스타일"></textarea>
+          <textarea id="customPromptInput" class="w-full h-40 p-4 rounded-md border-[1.5px] border-[#E0E0E0] text-sm resize-y outline-none font-primary leading-relaxed transition-colors duration-150 focus:border-border-active placeholder:text-placeholder" placeholder="원하는 스타일을 자유롭게 설명해주세요&#10;&#10;예시:&#10;• 피카소 큐비즘 스타일, 파스텔 톤&#10;• 수묵화 느낌의 동양적 캐릭터&#10;• 레트로 8비트 픽셀아트 스타일"></textarea>
         </div>
       </div>
-      <div class="btn-row">
-        <button class="btn-ghost sm" id="backToUploadBtn">&larr; 사진 변경</button>
-        <button class="btn-primary" id="generateBaseBtn" disabled>캐릭터 만들기 &rarr;</button>
+      <div class="btn-row flex gap-3 justify-center max-sm:flex-col max-sm:!gap-3">
+        <button class="btn-ghost sm w-full h-10 bg-transparent text-primary border-[1.5px] border-[#E0E0E0] rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors duration-150 hover:bg-subtle" id="backToUploadBtn">&larr; 사진 변경</button>
+        <button class="btn-primary w-full h-12 bg-primary text-card rounded-md text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 hover:bg-[#333] active:scale-[0.98] disabled:bg-border disabled:text-[#AAA] disabled:cursor-not-allowed" id="generateBaseBtn" disabled>캐릭터 만들기 &rarr;</button>
       </div>
     </section>
 
     <!-- Step 4: Base Review -->
-    <section class="step-section step-base-review" id="step-base_review">
-      <div class="base-image-container" id="baseImageContainer">
-        <div class="skeleton skeleton-box" id="baseSkeleton" style="display:none;">
-          <span class="loading-text">캐릭터 생성중<span class="loading-dots"></span></span>
+    <section class="step-section step-base-review text-center" id="step-base_review">
+      <div class="base-image-container max-w-[360px] mx-auto mb-6 relative" id="baseImageContainer">
+        <div class="skeleton skeleton-box hidden w-full aspect-square rounded-xl items-center justify-center flex-col gap-3" id="baseSkeleton">
+          <span class="loading-text text-[15px] font-semibold text-[#AAA]">캐릭터 생성중<span class="loading-dots"></span></span>
         </div>
-        <img id="baseImage" alt="베이스 캐릭터" style="display:none;">
+        <img id="baseImage" class="hidden w-full rounded-xl shadow-hover" alt="베이스 캐릭터">
       </div>
-      <input class="base-name-input" id="charNameInput" placeholder="캐릭터 이름 (선택)" value="My Character">
-      <div class="base-actions">
-        <button class="btn-primary" id="confirmBaseBtn">이 캐릭터로 진행 &rarr;</button>
-        <button class="btn-ghost" id="regenerateBaseBtn">&#128260; 다시 만들기</button>
-        <button class="btn-ghost sm" id="changeStyleBtn">&larr; 스타일 변경</button>
+      <input class="base-name-input w-60 h-11 text-center rounded-md border-[1.5px] border-[#E0E0E0] text-[15px] mx-auto mb-6 block outline-none transition-colors duration-150 focus:border-border-active" id="charNameInput" placeholder="캐릭터 이름 (선택)" value="My Character">
+      <div class="base-actions flex gap-2 flex-wrap max-sm:flex-col max-sm:gap-3">
+        <button class="btn-primary sm:flex-[2] sm:min-w-[160px] max-sm:w-full h-12 bg-primary text-card rounded-md text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 hover:bg-[#333] active:scale-[0.98]" id="confirmBaseBtn">이 캐릭터로 진행 &rarr;</button>
+        <button class="btn-ghost sm:flex-1 sm:min-w-[120px] max-sm:w-full h-12 bg-transparent text-primary border-[1.5px] border-[#E0E0E0] rounded-md text-[15px] font-medium flex items-center justify-center gap-2 transition-colors duration-150 hover:bg-subtle" id="regenerateBaseBtn">&#128260; 다시 만들기</button>
+        <button class="btn-ghost sm flex-none whitespace-nowrap h-10 text-[13px] px-4 bg-transparent text-primary border-[1.5px] border-[#E0E0E0] rounded-md font-medium flex items-center justify-center gap-2 transition-colors duration-150 hover:bg-subtle max-sm:w-full" id="changeStyleBtn">&larr; 스타일 변경</button>
       </div>
     </section>
 
     <!-- Step 5: Emoticon List -->
     <section class="step-section step-emoticon-list" id="step-emoticon_list">
-      <h2 class="title">이모티콘 구성을 확인하세요</h2>
-      <p class="desc">AI가 제안한 24가지 감정/상황입니다. 다른 구성을 원하면 '다른 구성으로'를 누르세요.</p>
-      <div class="list-skeleton" id="listSkeleton" style="display:none;"></div>
-      <div class="emoticon-list-grid" id="emoticonListGrid"></div>
-      <div class="btn-row">
-        <button class="btn-ghost sm" id="backToBaseBtn">&larr; 캐릭터 변경</button>
-        <button class="btn-primary" id="confirmListBtn">이대로 만들기 &rarr;</button>
+      <h2 class="title text-[22px] font-bold mb-2">이모티콘 구성을 확인하세요</h2>
+      <p class="desc text-sm text-text-secondary mb-6">AI가 제안한 24가지 감정/상황입니다. 다른 구성을 원하면 '다른 구성으로'를 누르세요.</p>
+      <div class="list-skeleton hidden grid-cols-2 max-sm:grid-cols-1 gap-2 mb-6" id="listSkeleton"></div>
+      <div class="emoticon-list-grid grid grid-cols-2 max-sm:grid-cols-1 gap-2 mb-6" id="emoticonListGrid"></div>
+      <div class="btn-row flex gap-3 justify-center max-sm:flex-col max-sm:!gap-3">
+        <button class="btn-ghost sm w-full h-10 bg-transparent text-primary border-[1.5px] border-[#E0E0E0] rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors duration-150 hover:bg-subtle" id="backToBaseBtn">&larr; 캐릭터 변경</button>
+        <button class="btn-primary w-full h-12 bg-primary text-card rounded-md text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 hover:bg-[#333] active:scale-[0.98]" id="confirmListBtn">이대로 만들기 &rarr;</button>
       </div>
     </section>
 
     <!-- Step 6: Generating -->
-    <section class="step-section step-generating" id="step-generating">
-      <div class="progress-ring-wrap">
-        <svg viewBox="0 0 160 160">
-          <circle class="bg-circle" cx="80" cy="80" r="72"></circle>
-          <circle class="fg-circle" id="progressCircle" cx="80" cy="80" r="72" stroke-dasharray="452.39" stroke-dashoffset="452.39"></circle>
+    <section class="step-section step-generating text-center pt-8" id="step-generating">
+      <div class="progress-ring-wrap relative w-40 h-40 mx-auto mb-6">
+        <svg viewBox="0 0 160 160" class="w-40 h-40 -rotate-90">
+          <circle class="bg-circle fill-none stroke-border stroke-[6]" cx="80" cy="80" r="72"></circle>
+          <circle class="fg-circle fill-none stroke-primary stroke-[6] stroke-round transition-all duration-500 ease-out" id="progressCircle" cx="80" cy="80" r="72" stroke-dasharray="452.39" stroke-dashoffset="452.39" stroke-linecap="round"></circle>
         </svg>
-        <div class="center-text">
-          <div class="num" id="progressNum">0/4</div>
-          <div class="sub" id="progressSub">준비 중...</div>
+        <div class="center-text absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+          <div class="num text-[32px] font-bold" id="progressNum">0/4</div>
+          <div class="sub text-sm text-text-secondary" id="progressSub">준비 중...</div>
         </div>
       </div>
-      <div class="progress-detail" id="progressDetail">이모티콘 시트를 생성합니다...</div>
-      <div class="sheet-strip" id="sheetStrip"></div>
-      <div class="progress-hint">약 1~2분 소요</div>
-      <button class="btn-ghost sm retry-btn" id="retrySheetBtn" style="display:none;">실패한 시트 재시도</button>
+      <div class="progress-detail text-sm text-text-secondary mb-6" id="progressDetail">이모티콘 시트를 생성합니다...</div>
+      <div class="sheet-strip flex gap-3 justify-center flex-wrap mb-6" id="sheetStrip"></div>
+      <div class="progress-hint text-[13px] text-text-muted">약 1~2분 소요</div>
+      <button class="btn-ghost sm retry-btn mt-4 hidden inline-flex h-10 bg-transparent text-primary border-[1.5px] border-[#E0E0E0] rounded-md text-sm font-medium items-center justify-center gap-2 transition-colors duration-150 hover:bg-subtle" id="retrySheetBtn">실패한 시트 재시도</button>
     </section>
 
     <!-- Step 7: Complete -->
     <section class="step-section step-complete" id="step-complete">
-      <div class="complete-header">
-        <img class="avatar" id="completeAvatar" alt="캐릭터">
-        <div class="char-name" id="completeCharName"></div>
+      <div class="complete-header flex items-center gap-4 mb-6">
+        <img class="avatar w-20 h-20 rounded-full object-cover shadow-card" id="completeAvatar" alt="캐릭터">
+        <div class="char-name text-[28px] font-bold" id="completeCharName"></div>
       </div>
-      <div class="special-images" id="specialImages"></div>
-      <div class="emoticon-grid" id="emoticonGrid"></div>
-      <div class="download-section">
-        <button class="btn-primary" id="downloadZipBtn">&#128230; 전체 다운로드 (ZIP)</button>
-        <button class="btn-link" id="newSetBtn">새 이모티콘 만들기</button>
+      <div class="special-images flex gap-6 mb-8 items-end max-sm:flex-col max-sm:items-center" id="specialImages"></div>
+      <div class="emoticon-grid grid grid-cols-4 max-sm:grid-cols-3 gap-3 mb-8" id="emoticonGrid"></div>
+      <div class="download-section mt-2">
+        <button class="btn-primary w-full h-14 bg-primary text-card rounded-md text-base font-semibold flex items-center justify-center gap-2 transition-all duration-150 hover:bg-[#333] active:scale-[0.98] disabled:bg-border disabled:text-[#AAA] disabled:cursor-not-allowed" id="downloadZipBtn">&#128230; 전체 다운로드 (ZIP)</button>
+        <button class="btn-link block text-center mt-4 text-sm text-text-secondary cursor-pointer bg-transparent border-none p-2 w-full hover:text-primary" id="newSetBtn">새 이모티콘 만들기</button>
       </div>
     </section>
   </main>
 
   <!-- Footer -->
-  <footer class="footer">&copy; 2026 Hwang Minho (revfactory@gmail.com) · Apache 2.0 + Commons Clause — 상업적 판매 불가</footer>
+  <footer class="footer text-center py-6 text-[13px] text-text-muted border-t border-border mt-auto">&copy; 2026 Hwang Minho (revfactory@gmail.com) · Apache 2.0 + Commons Clause — 상업적 판매 불가</footer>
 </div>
 
 <!-- Modal -->
-<div class="modal-overlay" id="modalOverlay">
-  <button class="modal-nav prev" id="modalPrev">&larr;</button>
-  <div class="modal-content">
-    <button class="modal-close" id="modalClose">&times;</button>
-    <img id="modalImage" alt="이모티콘 확대">
-    <div class="modal-label" id="modalLabel"></div>
-    <div class="modal-num" id="modalNum"></div>
+<div class="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-[4px] z-[1000] gap-4 hidden items-center justify-center" id="modalOverlay">
+  <button class="modal-nav prev flex-shrink-0 w-11 h-11 rounded-md bg-kakao flex items-center justify-center text-lg font-bold cursor-pointer border-none transition-transform duration-100 hover:scale-110" id="modalPrev">&larr;</button>
+  <div class="modal-content max-w-[320px] w-[90%] bg-card rounded-[24px] p-6 text-center shadow-modal relative max-sm:max-w-[90%] max-sm:rounded-xl max-sm:py-8 max-sm:px-6">
+    <button class="modal-close absolute top-3 right-4 text-xl cursor-pointer text-text-secondary bg-transparent border-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-subtle" id="modalClose">&times;</button>
+    <img id="modalImage" class="w-60 h-60 object-contain mx-auto mb-3" alt="이모티콘 확대">
+    <div class="modal-label text-base font-semibold mb-1" id="modalLabel"></div>
+    <div class="modal-num text-[13px] text-placeholder" id="modalNum"></div>
   </div>
-  <button class="modal-nav next" id="modalNext">&rarr;</button>
+  <button class="modal-nav next flex-shrink-0 w-11 h-11 rounded-md bg-kakao flex items-center justify-center text-lg font-bold cursor-pointer border-none transition-transform duration-100 hover:scale-110 max-sm:w-12 max-sm:h-11" id="modalNext">&rarr;</button>
 </div>
 
 <!-- Loading Overlay -->
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="loading-spinner"></div>
+<div class="loading-overlay fixed inset-0 bg-bg/80 z-[500] hidden items-center justify-center" id="loadingOverlay">
+  <div class="loading-spinner w-10 h-10 border-[3px] border-border border-t-primary rounded-full"></div>
 </div>
 
 <!-- Toast Container -->
-<div class="toast-container" id="toastContainer"></div>
+<div class="toast-container fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 pointer-events-none" id="toastContainer"></div>
 
 <script src="app.js"></script>
 </body>
