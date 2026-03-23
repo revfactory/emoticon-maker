@@ -127,8 +127,8 @@ tailwind.config = {
         <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple hidden>
       </div>
       <div class="upload-actions hidden mt-6 space-y-3" id="uploadActions">
-        <button class="btn-primary w-full h-12 bg-primary text-card rounded-md text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 hover:bg-[#333] active:scale-[0.98]" id="toStyleBtn">다음 단계 &rarr;</button>
         <button class="btn-ghost w-full h-12 bg-transparent text-primary border-2 border-[#CCC] rounded-md text-[15px] font-medium flex items-center justify-center gap-2 transition-colors duration-150 hover:bg-subtle hover:border-[#999]" id="reUploadBtn">전체 삭제</button>
+        <button class="btn-primary w-full h-12 bg-primary text-card rounded-md text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 hover:bg-[#333] active:scale-[0.98]" id="toStyleBtn">다음 단계 &rarr;</button>
       </div>
     </section>
 
@@ -149,8 +149,8 @@ tailwind.config = {
         </div>
       </div>
       <div class="mt-6 space-y-3">
-        <button class="btn-primary w-full h-12 bg-primary text-card rounded-md text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 hover:bg-[#333] active:scale-[0.98] disabled:bg-border disabled:text-[#AAA] disabled:cursor-not-allowed" id="generateBaseBtn" disabled>캐릭터 만들기 &rarr;</button>
         <button class="btn-ghost w-full h-12 bg-transparent text-primary border-2 border-[#CCC] rounded-md text-[15px] font-medium flex items-center justify-center gap-2 transition-colors duration-150 hover:bg-subtle hover:border-[#999]" id="backToUploadBtn">&larr; 사진 변경</button>
+        <button class="btn-primary w-full h-12 bg-primary text-card rounded-md text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 hover:bg-[#333] active:scale-[0.98] disabled:bg-border disabled:text-[#AAA] disabled:cursor-not-allowed" id="generateBaseBtn" disabled>캐릭터 만들기 &rarr;</button>
       </div>
     </section>
 
@@ -164,11 +164,11 @@ tailwind.config = {
       </div>
       <input class="base-name-input w-60 h-11 text-center rounded-md border-[1.5px] border-[#E0E0E0] text-[15px] mx-auto mb-6 block outline-none transition-colors duration-150 focus:border-border-active" id="charNameInput" placeholder="캐릭터 이름 (선택)" value="My Character">
       <div class="mt-6 space-y-3">
-        <button class="btn-primary w-full h-12 bg-primary text-card rounded-md text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 hover:bg-[#333] active:scale-[0.98]" id="confirmBaseBtn">이 캐릭터로 진행 &rarr;</button>
         <div class="flex gap-3">
           <button class="btn-ghost flex-1 h-12 bg-transparent text-primary border-2 border-[#CCC] rounded-md text-[15px] font-medium flex items-center justify-center gap-2 transition-colors duration-150 hover:bg-subtle hover:border-[#999]" id="regenerateBaseBtn">&#128260; 다시 만들기</button>
           <button class="btn-ghost flex-1 h-12 bg-transparent text-primary border-2 border-[#CCC] rounded-md text-[15px] font-medium flex items-center justify-center gap-2 transition-colors duration-150 hover:bg-subtle hover:border-[#999]" id="changeStyleBtn">&larr; 스타일 변경</button>
         </div>
+        <button class="btn-primary w-full h-12 bg-primary text-card rounded-md text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 hover:bg-[#333] active:scale-[0.98]" id="confirmBaseBtn">이 캐릭터로 진행 &rarr;</button>
       </div>
     </section>
 
@@ -179,8 +179,8 @@ tailwind.config = {
       <div class="list-skeleton hidden grid-cols-2 max-sm:grid-cols-1 gap-2 mb-6" id="listSkeleton"></div>
       <div class="emoticon-list-grid grid grid-cols-2 max-sm:grid-cols-1 gap-2 mb-6" id="emoticonListGrid"></div>
       <div class="mt-6 space-y-3">
-        <button class="btn-primary w-full h-12 bg-primary text-card rounded-md text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 hover:bg-[#333] active:scale-[0.98]" id="confirmListBtn">이대로 만들기 &rarr;</button>
         <button class="btn-ghost w-full h-12 bg-transparent text-primary border-2 border-[#CCC] rounded-md text-[15px] font-medium flex items-center justify-center gap-2 transition-colors duration-150 hover:bg-subtle hover:border-[#999]" id="backToBaseBtn">&larr; 캐릭터 변경</button>
+        <button class="btn-primary w-full h-12 bg-primary text-card rounded-md text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-150 hover:bg-[#333] active:scale-[0.98]" id="confirmListBtn">이대로 만들기 &rarr;</button>
       </div>
     </section>
 
