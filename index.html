@@ -120,9 +120,9 @@ tailwind.config = {
     <!-- Step 2: Upload -->
     <section class="step-section step-upload" id="step-upload">
       <div class="photo-grid flex gap-3 justify-center flex-wrap mb-4 empty:hidden empty:m-0" id="photoGrid"></div>
-      <div class="drop-zone border-2 border-dashed border-[#D0D0D0] rounded-xl h-80 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 gap-3 hover:border-primary hover:bg-[rgba(0,0,0,0.02)]" id="dropZone">
+      <div class="drop-zone border-2 border-dashed border-[#D0D0D0] rounded-xl h-96 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 gap-3 hover:border-primary hover:bg-[rgba(0,0,0,0.02)]" id="dropZone">
         <div class="icon text-5xl text-placeholder leading-none">&#128247;</div>
-        <div class="text text-base text-text-secondary">사진을 드래그하거나 클릭하세요</div>
+        <div class="text text-base text-text-secondary text-center">사진을 드래그하거나<br>클릭하여 업로드하세요</div>
         <div class="hint text-[13px] text-text-muted">JPG, PNG, WebP (최대 10MB, 3장까지)</div>
         <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple hidden>
       </div>
