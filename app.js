@@ -209,6 +209,11 @@ function renderStepIndicator() {
     else dot.classList.add('pending');
     dot.textContent = i + 1;
     dot.dataset.tooltip = STEP_LABELS[i];
+    // 완료된 단계 클릭 시 해당 단계로 이동 (generating 단계 제외)
+    if (i < currentIdx && s !== 'generating') {
+      dot.style.cursor = 'pointer';
+      dot.addEventListener('click', () => goToStep(s));
+    }
     container.appendChild(dot);
   });
 }
@@ -410,6 +415,7 @@ function renderStyleThumbs() {
 
 // ===== Step 3: Style =====
 function initStyle() {
+  document.getElementById('backToUploadBtn').addEventListener('click', () => goToStep('upload'));
   const grid = document.getElementById('styleGrid');
   const customInput = document.getElementById('customPromptInput');
   const generateBtn = document.getElementById('generateBaseBtn');
@@ -776,6 +782,7 @@ function initEmoticonList() {
   document.getElementById('confirmListBtn').addEventListener('click', () => {
     startGeneration();
   });
+  document.getElementById('backToBaseBtn').addEventListener('click', () => goToStep('base_review'));
 }
 
 // ===== Step 6: Generation =====
