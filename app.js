@@ -630,43 +630,56 @@ ${isRealistic ? '- Slightly oversized head with compact body proportions (vinyl 
     parts.push({ inlineData: { mimeType: photo.mime, data: photo.base64 } });
   });
 
-  try {
-    const response = await state.ai.models.generateContent({
-      model: 'gemini-3.1-flash-image-preview',
-      contents: [{ role: 'user', parts }],
-      config: {
-        responseModalities: ['TEXT', 'IMAGE']
+  const maxAttempts = 2;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      if (attempt > 0) {
+        showToast('이미지 재생성 중...', 'info');
+        await delay(2000);
       }
-    });
+      const response = await callGeminiWithRetry(async () => {
+        return await state.ai.models.generateContent({
+          model: 'gemini-3.1-flash-image-preview',
+          contents: [{ role: 'user', parts }],
+          config: {
+            responseModalities: ['TEXT', 'IMAGE']
+          }
+        });
+      });
 
-    let imageFound = false;
-    if (response.candidates && response.candidates[0]?.content?.parts) {
-      for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData) {
-          const blob = base64ToBlob(part.inlineData.data, part.inlineData.mimeType);
-          state.baseCharacter = blob;
-          state.baseCharacterBase64 = part.inlineData.data;
-          if (state.baseCharacterUrl) URL.revokeObjectURL(state.baseCharacterUrl);
-          state.baseCharacterUrl = URL.createObjectURL(blob);
-          img.src = state.baseCharacterUrl;
-          skeleton.classList.add('hidden');
-          skeleton.classList.remove('flex');
-          img.classList.remove('hidden');
-          img.classList.add('block');
-          await dbPut('baseCharacter', blob);
-          imageFound = true;
-          break;
+      let imageFound = false;
+      if (response.candidates && response.candidates[0]?.content?.parts) {
+        for (const part of response.candidates[0].content.parts) {
+          if (part.inlineData) {
+            const blob = base64ToBlob(part.inlineData.data, part.inlineData.mimeType);
+            state.baseCharacter = blob;
+            state.baseCharacterBase64 = part.inlineData.data;
+            if (state.baseCharacterUrl) URL.revokeObjectURL(state.baseCharacterUrl);
+            state.baseCharacterUrl = URL.createObjectURL(blob);
+            img.src = state.baseCharacterUrl;
+            skeleton.classList.add('hidden');
+            skeleton.classList.remove('flex');
+            img.classList.remove('hidden');
+            img.classList.add('block');
+            await dbPut('baseCharacter', blob);
+            imageFound = true;
+            break;
+          }
         }
       }
+      if (!imageFound) {
+        if (attempt < maxAttempts - 1) continue;
+        throw new Error('AI가 이미지를 생성하지 못했습니다. 다른 사진이나 스타일을 시도해주세요.');
+      }
+      return; // 성공
+    } catch (err) {
+      if (attempt < maxAttempts - 1 && !err.message?.includes('다른 사진')) continue;
+      skeleton.classList.add('hidden');
+      skeleton.classList.remove('flex');
+      handleApiError(err);
+      goToStep('style');
+      return;
     }
-    if (!imageFound) {
-      throw new Error('이미지가 응답에 포함되지 않았습니다.');
-    }
-  } catch (err) {
-    skeleton.classList.add('hidden');
-    skeleton.classList.remove('flex');
-    handleApiError(err);
-    goToStep('style');
   }
 }
 
