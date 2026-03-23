@@ -6,7 +6,7 @@
  */
 
 /* ===== Reset (Tailwind preflight covers most, but keep cursor/font inheritance) ===== */
-button { font-family: inherit; cursor: pointer; border: none; background: none; }
+button { font-family: inherit; cursor: pointer; }
 input, textarea { font-family: inherit; }
 img { display: block; max-width: 100%; }
 a { color: inherit; }
