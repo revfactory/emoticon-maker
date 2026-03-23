@@ -998,6 +998,14 @@ function updateSheetModalContent() {
 
 // ===== 개별 시트 재생성 =====
 async function regenerateSingleSheet(sheetIdx) {
+  // 썸네일을 로딩 상태로 전환
+  const thumb = document.getElementById(`sheetThumb${sheetIdx}`);
+  if (thumb) {
+    thumb.classList.remove('done');
+    thumb.innerHTML = `<span class="text-xs text-text-secondary">재생성 중...</span>`;
+  }
+  showToast(`시트 ${sheetIdx + 1} 재생성 중...`, 'info');
+
   let styleDesc = state.selectedStyle?.prompt || 'cute cartoon character';
   if (state.selectedStyle?.id === 'custom') {
     styleDesc = state.customPrompt || 'cute cartoon character';
