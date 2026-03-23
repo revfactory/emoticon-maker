@@ -10,11 +10,11 @@ import { GoogleGenAI } from '@google/genai';
 // ===== Constants =====
 const STEPS = ['api_key', 'upload', 'style', 'base_review', 'emoticon_list', 'generating', 'complete'];
 const STYLE_PRESETS = [
-  { id: 'byungmat', name: '병맛 스케치', emoji: '🎨', description: '대충 그린 듯한 뀨여운 병맛 캐릭터', prompt: 'Create a funny crude sketch style character, intentionally messy and cute doodle style with exaggerated expressions, simple colored pencil look' },
-  { id: 'ghibli', name: '지브리풍', emoji: '🌸', description: '미야자키 스타일 수채화 감성', prompt: 'Create a Studio Ghibli / Miyazaki style watercolor character, soft pastel colors, gentle warm lighting, hand-painted aesthetic with delicate details' },
-  { id: 'minimal', name: '미니멀 라인', emoji: '✏️', description: '심플한 선화, 최소 디테일', prompt: 'Create a minimal line art character, clean simple black outlines, very few details, flat colors, modern minimalist illustration style' },
-  { id: 'cute3d', name: '귀여운 3D', emoji: '🧸', description: '쫀득쫀득 마시멜로 3D 캐릭터', prompt: 'Create a cute squishy 3D marshmallow character, soft round shapes, clay-like texture, pastel colors, adorable chibi proportions, 3D rendered look' },
-  { id: 'anime', name: '애니메이션', emoji: '🎌', description: '일본 애니메이션 스타일 SD 캐릭터', prompt: 'Create a Japanese anime style super-deformed (SD/chibi) character, big expressive eyes, colorful, typical anime cel-shading style' }
+  { id: 'byungmat', name: '병맛 스케치', emoji: '🎨', description: '대충 그린 듯한 뀨여운 병맛 캐릭터', prompt: 'Create a funny crude sketch style character based on the reference photo, capturing the person\'s distinctive features (hairstyle, face shape, glasses, accessories) in an intentionally messy and cute doodle style with exaggerated expressions, simple colored pencil look' },
+  { id: 'ghibli', name: '지브리풍', emoji: '🌸', description: '미야자키 스타일 수채화 감성', prompt: 'Create a Studio Ghibli / Miyazaki style watercolor character based on the reference photo, capturing the person\'s distinctive features (hairstyle, face shape, glasses, accessories) with soft pastel colors, gentle warm lighting, hand-painted aesthetic with delicate details' },
+  { id: 'minimal', name: '미니멀 라인', emoji: '✏️', description: '심플한 선화, 최소 디테일', prompt: 'Create a minimal line art character based on the reference photo, capturing the person\'s distinctive features (hairstyle, face shape, glasses, accessories) with clean simple black outlines, very few details, flat colors, modern minimalist illustration style' },
+  { id: 'cute3d', name: '귀여운 3D', emoji: '🧸', description: '쫀득쫀득 마시멜로 3D 캐릭터', prompt: 'Create a cute squishy 3D marshmallow character based on the reference photo, capturing the person\'s distinctive features (hairstyle, face shape, glasses, accessories) with soft round shapes, clay-like texture, pastel colors, adorable chibi proportions, 3D rendered look' },
+  { id: 'anime', name: '애니메이션', emoji: '🎌', description: '일본 애니메이션 스타일 SD 캐릭터', prompt: 'Create a Japanese anime style super-deformed (SD/chibi) character based on the reference photo, capturing the person\'s distinctive features (hairstyle, face shape, glasses, accessories) with big expressive eyes, colorful, typical anime cel-shading style' }
 ];
 let aiSuggestedStyles = [];
 
@@ -525,15 +525,19 @@ async function generateBaseCharacter() {
     stylePrompt = state.customPrompt || 'cute cartoon character style';
   }
 
-  const prompt = `Create a single character illustration based on the reference photo. Style: ${stylePrompt}.
-This will be used as a base character for a set of 24 Kakao-style emoticons/stickers.
-IMPORTANT:
+  const prompt = `I'm uploading a reference photo of a real person. Create a single character illustration that MUST closely resemble this specific person. Style: ${stylePrompt}.
+This will be used as a base character for a set of 24 emoticons/stickers.
+CRITICAL — Reference photo matching:
+- You MUST carefully study the attached reference photo first
+- Preserve the person's EXACT distinguishing features: face shape, hairstyle, hair color, skin tone, glasses, facial hair, accessories, clothing style
+- The character must be immediately recognizable as this specific person, not a generic character
+- Even in minimal/abstract styles, the key visual identity of the person must be preserved
+Rules:
 - Create ONE character only, centered in the frame, full body visible
 - White background
 - The character should be expressive and suitable for various emotions
-- Maintain the person's key features (hair, glasses, accessories) in the new style
 - Square 1:1 aspect ratio
-- The character should be cute, round, and chibi-proportioned`;
+- Cute, round, and chibi-proportioned`;
 
   try {
     const response = await state.ai.models.generateContent({
