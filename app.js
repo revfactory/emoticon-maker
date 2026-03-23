@@ -5,7 +5,7 @@
  * See LICENSE file for details
  */
 
-import { GoogleGenAI } from '@google/genai';
+let GoogleGenAI;
 
 // ===== Constants =====
 const STEPS = ['api_key', 'upload', 'style', 'base_review', 'emoticon_list', 'generating', 'complete'];
@@ -1242,6 +1242,14 @@ async function tryRestore() {
 
 // ===== Init =====
 async function init() {
+  // 동적으로 @google/genai 로드 (file:// 프로토콜 지원)
+  try {
+    const module = await import('https://esm.sh/@google/genai');
+    GoogleGenAI = module.GoogleGenAI;
+  } catch (e) {
+    console.error('Google GenAI SDK 로드 실패:', e);
+  }
+
   try { await openDB(); } catch (e) { console.warn('IndexedDB unavailable'); }
 
   renderStepIndicator();
